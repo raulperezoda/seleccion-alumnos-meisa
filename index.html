@@ -1013,7 +1013,6 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&G('modal-curso')?.classList.contains('open'))guardarCurso();
 });
 const ESPEC_LABELS={soldadura:'🔧 Soldadura',tuberia:'🔧 Tuberías',mecanica:'🔧 Mecánica',electricidad:'⚡ Electricidad',electronica:'⚡ Electrónica',teoria:'📖 Teoría General',prl:'⚠️ PRL / Seguridad',general:'📚 General'};
-const _fDoc=null;
 let _iDoc=null,_fDoc=null;
 function renderDocentes(){
   const tb=G('tbody-docentes'),dc=getDc();
