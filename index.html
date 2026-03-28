@@ -85,6 +85,7 @@ table.data tr.sel td{background:#ddeeff}
     <button class="tab" onclick="showTab('prl')">⚠️ PRL</button>
     <button class="tab" onclick="showTab('gantt')">📊 Gantt</button>
     <button class="tab" onclick="showTab('festivos')">🗓 Festivos</button>
+    <button class="tab" onclick="showTab('docentes')">👨‍🏫 Docentes</button>
   </div>
   <div class="panels">
 
@@ -92,6 +93,22 @@ table.data tr.sel td{background:#ddeeff}
     <div id="tab-org" class="panel active">
       <div style="display:flex;gap:9px;flex:1;overflow:hidden;min-height:0">
         <div style="width:290px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;overflow-y:auto">
+          <div class="card">
+            <div class="card-title">🏛 Entidad Financiadora</div>
+            <label>Tipo de entidad</label>
+            <select id="ent-tipo" onchange="cambiarEntidad()">
+              <option value="">— Sin especificar —</option>
+              <option value="Ayuntamiento">🏛 Ayuntamiento</option>
+              <option value="Cámara de Comercio">🏢 Cámara de Comercio</option>
+              <option value="Junta de Andalucía">🌿 Junta de Andalucía</option>
+              <option value="otro">✏️ Otro...</option>
+            </select>
+            <div id="ent-otro-wrap" style="display:none">
+              <label>Especificar entidad</label>
+              <input type="text" id="ent-otro" placeholder="Nombre de la entidad..." oninput="guardarEntidad()">
+            </div>
+            <div id="ent-display" style="margin-top:6px;font-size:11px;font-weight:bold;color:var(--ok);display:none"></div>
+          </div>
           <div class="card">
             <div class="card-title">Cursos programados</div>
             <div id="lista-prog"><p style="color:var(--mut);font-size:11px;text-align:center;padding:8px">Sin cursos añadidos</p></div>
@@ -129,10 +146,10 @@ table.data tr.sel td{background:#ddeeff}
             <button class="btn btn-grey btn-sm" onclick="descargarPlantilla()">📄 Plantilla CSV</button>
           </div>
         </div>
-        <div class="info">CSV: <code>codigo ; nombre ; area ; horas_totales ; horas_diarias ; tipo</code></div>
+        <div class="info">CSV: <code>codigo ; nombre ; area ; horas_totales ; horas_diarias ; tipo ; entidad ; doc_teo ; doc_tal ; doc_prl</code> &nbsp;|&nbsp; Primero registra docentes en la pestaña <strong>👨‍🏫 Docentes</strong></div>
         <div id="alert-cursos"></div>
         <div class="scroll">
-          <table class="data"><thead><tr><th>Código</th><th>Nombre</th><th>Área</th><th>H. Tot.</th><th>H./Día</th><th>Tipo</th></tr></thead>
+          <table class="data"><thead><tr><th>Código</th><th>Nombre</th><th>Área</th><th>H. Tot.</th><th>H./Día</th><th>Tipo</th><th>Entidad</th><th>Docentes</th></tr></thead>
           <tbody id="tbody-cursos"></tbody></table>
         </div>
       </div>
@@ -249,6 +266,65 @@ table.data tr.sel td{background:#ddeeff}
       </div>
     </div>
 
+    <!-- DOCENTES -->
+    <div id="tab-docentes" class="panel">
+      <div style="display:flex;gap:9px;flex:1;overflow:hidden;min-height:0">
+        <div style="width:320px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;overflow-y:auto">
+          <div class="card">
+            <div class="card-title">👨‍🏫 Añadir Docente</div>
+            <label>Nombre completo</label>
+            <input type="text" id="doc-nombre" placeholder="Ej: Juan García López">
+            <label>DNI / NIE</label>
+            <input type="text" id="doc-dni" placeholder="Ej: 12345678A">
+            <label>Especialización</label>
+            <select id="doc-espec">
+              <option value="soldadura">🔧 Soldadura</option>
+              <option value="tuberia">🔧 Tuberías y Calderería</option>
+              <option value="mecanica">🔧 Mecánica Industrial</option>
+              <option value="electricidad">⚡ Electricidad</option>
+              <option value="electronica">⚡ Electrónica</option>
+              <option value="teoria">📖 Teoría General</option>
+              <option value="prl">⚠️ PRL / Seguridad</option>
+              <option value="general">📚 General</option>
+            </select>
+            <label>Teléfono</label>
+            <input type="text" id="doc-tel" placeholder="Ej: 600 123 456">
+            <label>Email</label>
+            <input type="email" id="doc-email" placeholder="Ej: juan@email.com">
+            <label>Notas</label>
+            <textarea id="doc-notas" rows="2" placeholder="Observaciones..."></textarea>
+            <button class="btn btn-ok" style="width:100%;margin-top:9px" onclick="guardarDocente()">💾 Guardar docente</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Estadísticas</div>
+            <div id="doc-stats" style="font-size:11px;color:var(--mut)"></div>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+            <div class="card" style="flex:1;margin:0">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+                <div class="card-title" style="margin:0">Directorio de Docentes</div>
+                <div style="display:flex;gap:5px">
+                  <button class="btn btn-sec btn-sm" onclick="editarDocenteSel()">✏ Editar</button>
+                  <button class="btn btn-red btn-sm" onclick="eliminarDocenteSel()">✕ Eliminar</button>
+                </div>
+              </div>
+              <div id="alert-doc" style="margin-top:6px"></div>
+              <div class="scroll" style="margin-top:8px">
+                <table class="data"><thead><tr><th>Nombre</th><th>DNI</th><th>Especialización</th><th>Contacto</th><th>Notas</th></tr></thead>
+                <tbody id="tbody-docentes"></tbody></table>
+              </div>
+            </div>
+          </div>
+          <div class="card" style="flex:1;overflow:auto">
+            <div class="card-title">Asignaciones vigentes</div>
+            <div id="doc-asignaciones" style="font-size:11px;line-height:1.7"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- FESTIVOS -->
     <div id="tab-festivos" class="panel">
       <div class="card" style="flex:1;display:flex;flex-direction:column;gap:8px">
@@ -280,6 +356,27 @@ table.data tr.sel td{background:#ddeeff}
 <div class="overlay" id="modal-prog" onclick="if(event.target===this)G('modal-prog').classList.remove('open')">
   <div class="modal">
     <h2>Añadir Curso al Organigrama</h2>
+    <div style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:6px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:bold;color:var(--pri);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px">👨‍🏫 Docentes (si differs del curso)</div>
+      <label style="margin-top:0">Docente — Teoría</label>
+      <select id="mp-doc-teo" onchange="handleCustomDoc(this,'mp-doc-teo-custom')">
+        <option value="">— Igual que el curso —</option>
+        <option value="__custom__">✏️ Otro (escribir)...</option>
+      </select>
+      <input type="text" id="mp-doc-teo-custom" data-custom="1" placeholder="Escribe nombre..." style="display:none;margin-top:4px">
+      <label>Docente — Taller</label>
+      <select id="mp-doc-pra" onchange="handleCustomDoc(this,'mp-doc-pra-custom')">
+        <option value="">— Igual que el curso —</option>
+        <option value="__custom__">✏️ Otro (escribir)...</option>
+      </select>
+      <input type="text" id="mp-doc-pra-custom" data-custom="1" placeholder="Escribe nombre..." style="display:none;margin-top:4px">
+      <label>Docente — PRL</label>
+      <select id="mp-doc-seg" onchange="handleCustomDoc(this,'mp-doc-seg-custom')">
+        <option value="">— Igual que el curso —</option>
+        <option value="__custom__">✏️ Otro (escribir)...</option>
+      </select>
+      <input type="text" id="mp-doc-seg-custom" data-custom="1" placeholder="Escribe nombre..." style="display:none;margin-top:4px">
+    </div>
     <label>Curso</label><select id="mp-curso"></select>
     <div class="row" style="margin-top:4px">
       <div><label>Fecha de inicio</label><input type="date" id="mp-inicio"></div>
@@ -334,6 +431,29 @@ table.data tr.sel td{background:#ddeeff}
       <option value="Programa Formativo">Programa Formativo (PF)</option>
       <option value="Certificado de Profesionalidad">Certificado de Profesionalidad (CP)</option>
     </select>
+    <label>Entidad financiadora</label>
+    <input type="text" id="mc-entidad" placeholder="SEPE, FUNDAE, empresa privada...">
+    <div style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:6px;padding:10px 12px;margin-top:8px">
+      <div style="font-size:11px;font-weight:bold;color:var(--pri);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px">👨‍🏫 Docentes del curso</div>
+      <label style="margin-top:0">Docente — Teoría</label>
+      <select id="mc-doc-teo" onchange="handleCustomDoc(this,'mc-doc-teo-custom')">
+        <option value="">— No asignado —</option>
+        <option value="__custom__">✏️ Otro (escribir)...</option>
+      </select>
+      <input type="text" id="mc-doc-teo-custom" data-custom="1" placeholder="Escribe nombre del docente..." style="display:none;margin-top:4px">
+      <label>Docente — Taller</label>
+      <select id="mc-doc-tal" onchange="handleCustomDoc(this,'mc-doc-tal-custom')">
+        <option value="">— No asignado —</option>
+        <option value="__custom__">✏️ Otro (escribir)...</option>
+      </select>
+      <input type="text" id="mc-doc-tal-custom" data-custom="1" placeholder="Escribe nombre del docente..." style="display:none;margin-top:4px">
+      <label>Docente — PRL</label>
+      <select id="mc-doc-prl" onchange="handleCustomDoc(this,'mc-doc-prl-custom')">
+        <option value="">— No asignado —</option>
+        <option value="__custom__">✏️ Otro (escribir)...</option>
+      </select>
+      <input type="text" id="mc-doc-prl-custom" data-custom="1" placeholder="Escribe nombre del docente..." style="display:none;margin-top:4px">
+    </div>
     <div class="mfooter">
       <button class="btn btn-grey" onclick="G('modal-curso').classList.remove('open')">Cancelar</button>
       <button class="btn btn-pri" onclick="guardarCurso()">💾 Guardar</button>
@@ -342,10 +462,12 @@ table.data tr.sel td{background:#ddeeff}
 </div>
 
 <script>
-const K={cu:'orgCursos_v2',ex:'orgExtras_v1',pr:'orgProgs_v2',te:'orgTeo_v1',pl:'orgPRL_v1'};
+const K={cu:'orgCursos_v2',ex:'orgExtras_v1',pr:'orgProgs_v2',te:'orgTeo_v1',pl:'orgPRL_v1',en:'orgEntidad_v1',dc:'orgDocentes_v1'};
 const ls={g:k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch{return null}},s:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
 const getCu=()=>ls.g(K.cu)||[];const getEx=()=>ls.g(K.ex)||{};
 const getPr=()=>ls.g(K.pr)||[];const getTe=()=>ls.g(K.te)||[];const getPl=()=>ls.g(K.pl)||[];
+const getEn=()=>ls.g(K.en)||{tipo:'',otro:''};
+const getDc=()=>ls.g(K.dc)||[];
 function G(id){return document.getElementById(id);}
 function pascua(y){
   const a=y%19,[b,c]=[Math.floor(y/100),y%100],[d,e]=[Math.floor(b/4),b%4];
@@ -390,20 +512,27 @@ function turnoH(t){return t.endsWith('7')?7:6;}
 function turnoLbl(t){return{m7:'☀️ Mañana 7h (08–15)',t7:'🌙 Tarde 7h (15–22)',m6:'☀️ Mañana 6h (08–14)',t6:'🌙 Tarde 6h (16–22)'}[t]||t;}
 function showAlert(id,msg,tipo){const d=G(id);if(!d)return;d.className='alert alert-'+tipo;d.textContent=msg;setTimeout(()=>{d.className='';d.textContent='';},4000);}
 function showTab(id){
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['org','cursos','teoricas','prl','gantt','festivos'][i]===id));
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['org','cursos','teoricas','prl','gantt','festivos','docentes'][i]===id));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   G('tab-'+id).classList.add('active');
   if(id==='cursos')renderCursos();if(id==='festivos')renderFestivos();
   if(id==='teoricas'){selsCurso('t-curso','t-filtro');renderTeorica();renderCalTeorica();}
   if(id==='prl'){selsCurso('prl-curso');renderPRL();renderCalPRL();}
   if(id==='gantt')renderGantt();
+  if(id==='docentes')renderDocentes();
 }
 let _org=[];
 function selCursoModal(){
   const s=G('mp-curso');s.innerHTML='';
   getCu().forEach((c,i)=>{const o=document.createElement('option');o.value=i;o.textContent=c.codigo+' — '+c.nombre;s.appendChild(o);});
 }
-function abrirModalProg(){selCursoModal();G('mp-inicio').value=HOY;G('mp-hdia').value='';G('mp-label').value='';G('modal-prog').classList.add('open');}
+function abrirModalProg(){
+  selCursoModal();selDocentes();
+  G('mp-inicio').value=HOY;G('mp-hdia').value='';G('mp-label').value='';
+  ['mp-doc-teo','mp-doc-pra','mp-doc-seg'].forEach(id=>{const s=G(id);if(s)s.value='';});
+  ['mp-doc-teo-custom','mp-doc-pra-custom','mp-doc-seg-custom'].forEach(id=>{const s=G(id);if(s){s.value='';s.style.display='none';}});
+  G('modal-prog').classList.add('open');
+}
 function guardarProg(){
   const idx=parseInt(G('mp-curso').value);if(isNaN(idx)){alert('Selecciona un curso.');return;}
   const c=getCu()[idx];if(!c)return;
@@ -411,7 +540,9 @@ function guardarProg(){
   const turno=G('mp-turno').value,hdiaO=parseFloat(G('mp-hdia').value)||null,hdia=hdiaO||turnoH(turno);
   const [bg,fg]=G('mp-color').value.split('|');
   const label=G('mp-label').value.trim()||c.codigo;
-  const pr=getPr();pr.push({idx,turno,inicio,hdia,bg,fg,label});
+  const getDoc=(selId,inpId)=>{const s=G(selId);if(s.value==='__custom__')return G(inpId)?.value.trim()||'';return s.value||'';};
+  const docTeo=getDoc('mp-doc-teo','mp-doc-teo-custom'),docPra=getDoc('mp-doc-pra','mp-doc-pra-custom'),docSeg=getDoc('mp-doc-seg','mp-doc-seg-custom');
+  const pr=getPr();pr.push({idx,turno,inicio,hdia,bg,fg,label,docTeo,docPra,docSeg});
   ls.s(K.pr,pr);G('modal-prog').classList.remove('open');renderListaProg();
 }
 function renderListaProg(){
@@ -426,6 +557,8 @@ function renderListaProg(){
       +'<span style="color:var(--mut)">'+turnoLbl(p.turno)+'</span><br>'
       +'📅 <strong>'+esES(p.inicio)+'</strong> → <strong>'+finStr+'</strong><br>'
       +'<span style="font-size:10px;color:var(--mut)">'+c.horas_totales+'h totales · '+p.hdia+'h/día · '+nDias+'</span>'
+      +(c.entidad?'<div style="margin-top:2px"><span class="badge" style="background:#d6eaf8;color:#1a5276;font-size:9px">🏛 '+c.entidad+'</span></div>':'')
+      +((p.docTeo||p.docPra||p.docSeg||c.docTeo||c.docTal||c.docPRL)?'<div style="font-size:10px;color:#2471a3;margin-top:3px;line-height:1.5">'+((p.docTeo||c.docTeo)?'📖 '+(p.docTeo||c.docTeo)+'<br>':'')+((p.docPra||c.docTal)?'🔧 '+(p.docPra||c.docTal)+'<br>':'')+((p.docSeg||c.docPRL)?'⚠️ '+(p.docSeg||c.docPRL):'')+'</div>':'')
       +'</div>'
       +'<button class="btn btn-red btn-sm" onclick="elimProg('+i+')" style="flex-shrink:0">✕</button>'
       +'</div>';
@@ -441,7 +574,7 @@ function generarOrganigrama(){
   });
   G('btn-html').disabled=false;G('btn-excel').disabled=false;
   G('resumen-org').style.display='';
-  G('fichas-resumen').innerHTML=_org.map(d=>'<div style="border-left:4px solid '+d.bg+';padding:7px 10px;margin-bottom:6px;background:#f8f9fa;border-radius:5px;font-size:11px;line-height:1.6"><strong style="color:var(--pri)">'+d.lbl+'</strong><br><span style="color:var(--mut)">'+turnoLbl(d.turno)+'</span><br>📅 '+esES(iso(d.ini))+' → '+esES(iso(d.fin))+'<br>📊 '+d.sess.length+' días lectivos · '+d.c.horas_totales+'h totales</div>').join('');
+  G('fichas-resumen').innerHTML=_org.map(d=>{const teoF=d.p.docTeo||d.c.docTeo,talF=d.p.docPra||d.c.docTal,segF=d.p.docSeg||d.c.docPRL;return '<div style="border-left:4px solid '+d.bg+';padding:7px 10px;margin-bottom:6px;background:#f8f9fa;border-radius:5px;font-size:11px;line-height:1.6"><strong style="color:var(--pri)">'+d.lbl+'</strong>'+(d.c.entidad?' <span class="badge" style="background:#d6eaf8;color:#1a5276;font-size:9px">'+d.c.entidad+'</span>':'')+'<br><span style="color:var(--mut)">'+turnoLbl(d.turno)+'</span><br>📅 '+esES(iso(d.ini))+' → '+esES(iso(d.fin))+'<br>📊 '+d.sess.length+' días lectivos · '+d.c.horas_totales+'h totales'+(teoF||talF||segF?'<br><span style="font-size:10px;color:#2471a3">'+(teoF?'📖 '+teoF+' ':'')+(talF?'🔧 '+talF+' ':'')+(segF?'⚠️ '+segF:'')+'</span>':'')+'</div>';}).join('');
   renderCalOrg();
 }
 function buildMes(y,m,orgData,tSet,prlSet){
@@ -528,14 +661,21 @@ function exportarHTML(){
   }
   const lH=_org.map(d=>'<span><b style="background:'+d.bg+';color:'+d.fg+';padding:1px 5px;border-radius:3px">'+d.lbl+'</b> '+turnoLbl(d.turno)+'</span>').join('')+
     '<span><b style="background:#fef9e7;padding:1px 5px;border-radius:3px">📖</b>Teórica</span><span><b style="background:#f9e3c0;padding:1px 5px;border-radius:3px">⚠️</b>PRL</span>';
-  const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Organigrama MEISA</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px}@page{size:A4 landscape;margin:10mm}@media print{.np{display:none}}header{background:#1a3a5c;color:#fff;padding:10px 15px;margin-bottom:9px}header h1{font-size:13px}header p{font-size:9px;opacity:.75}.meses{display:flex;flex-wrap:wrap;gap:7px}.mes{border:1px solid #ccc;border-radius:5px;overflow:hidden;min-width:182px;flex:1}.mh{background:#1a3a5c;color:#fff;text-align:center;padding:4px;font-weight:bold;font-size:10px}table{width:100%;border-collapse:collapse}th{background:#d6eaf8;color:#1a3a5c;text-align:center;padding:2px;font-size:9px}td{text-align:center;padding:2px;border:1px solid #eee;font-size:9px;vertical-align:top}td b{display:block}.p{display:block;border-radius:2px;font-size:8px;padding:1px 2px;margin:1px 0;white-space:nowrap;overflow:hidden}td.fest{background:#f5b7b1;color:#922b21}td.finde{background:#d5d8dc;color:#999}td:empty{background:#fafafa;border:none}.ley{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0;font-size:10px;align-items:center}.pie{font-size:9px;color:#999;margin-top:4px}</style></head><body><header><h1>ORGANIGRAMA — MEISA Formación Los Barrios (Cádiz)</h1><p>Festivos: nacionales + Andalucía + Cádiz capital | '+esES(HOY)+'</p></header><div class="meses">'+mH+'</div><div class="ley">'+lH+'</div><p class="pie">'+_org.map(d=>d.lbl+': '+esES(iso(d.ini))+' → '+esES(iso(d.fin))+' ('+d.sess.length+' días)').join(' | ')+'</p><div class="np" style="margin-top:10px"><button onclick="window.print()" style="padding:7px 16px;background:#1a3a5c;color:#fff;border:none;border-radius:5px;cursor:pointer">🖨 Imprimir / PDF</button></div></body></html>';
+  const entidad=getEntidadNombre();
+  const docInfo=_org.map(d=>{const ds=[];const teoH=d.p.docTeo||d.c.docTeo,talH=d.p.docPra||d.c.docTal,segH=d.p.docSeg||d.c.docPRL;if(teoH)ds.push('📖 Teoría: '+teoH);if(talH)ds.push('🔧 Taller: '+talH);if(segH)ds.push('⚠️ PRL: '+segH);return ds.length?'<tr><td style="padding:4px 8px;font-weight:bold;background:#eaf4fb;border:1px solid #aed6f1">'+d.lbl+(d.c.entidad?' <span style="font-size:8px;background:#d6eaf8;color:#1a5276;padding:1px 4px;border-radius:3px">'+d.c.entidad+'</span>':'')+'</td><td style="padding:4px 8px;border:1px solid #aed6f1">'+ds.join(' &nbsp;|&nbsp; ')+'</td></tr>':'';}).filter(Boolean).join('');
+  const docTable=docInfo?'<div style="margin:8px 0"><table style="font-size:9px;border-collapse:collapse;width:auto"><thead><tr><th style="padding:3px 8px;background:#1a3a5c;color:#fff;text-align:left;border:1px solid #1a3a5c">Curso</th><th style="padding:3px 8px;background:#1a3a5c;color:#fff;text-align:left;border:1px solid #1a3a5c">Docentes</th></tr></thead><tbody>'+docInfo+'</tbody></table></div>':'';
+  const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Organigrama MEISA</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px}@page{size:A4 landscape;margin:10mm}@media print{.np{display:none}}header{background:#1a3a5c;color:#fff;padding:10px 15px;margin-bottom:9px}header h1{font-size:13px}header p{font-size:9px;opacity:.75}header .ent{font-size:10px;background:rgba(255,255,255,.15);display:inline-block;padding:2px 8px;border-radius:3px;margin-top:3px}.meses{display:flex;flex-wrap:wrap;gap:7px}.mes{border:1px solid #ccc;border-radius:5px;overflow:hidden;min-width:182px;flex:1}.mh{background:#1a3a5c;color:#fff;text-align:center;padding:4px;font-weight:bold;font-size:10px}table{width:100%;border-collapse:collapse}th{background:#d6eaf8;color:#1a3a5c;text-align:center;padding:2px;font-size:9px}td{text-align:center;padding:2px;border:1px solid #eee;font-size:9px;vertical-align:top}td b{display:block}.p{display:block;border-radius:2px;font-size:8px;padding:1px 2px;margin:1px 0;white-space:nowrap;overflow:hidden}td.fest{background:#f5b7b1;color:#922b21}td.finde{background:#d5d8dc;color:#999}td:empty{background:#fafafa;border:none}.ley{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0;font-size:10px;align-items:center}.pie{font-size:9px;color:#999;margin-top:4px}</style></head><body><header><h1>ORGANIGRAMA — MEISA Formación Los Barrios (Cádiz)</h1>'+(entidad!=='Sin especificar'?'<div class="ent">🏛 Entidad financiadora: '+entidad+'</div>':'')+'<p>Festivos: nacionales + Andalucía + Cádiz capital | '+esES(HOY)+'</p></header>'+docTable+'<div class="meses">'+mH+'</div><div class="ley">'+lH+'</div><p class="pie">'+_org.map(d=>d.lbl+': '+esES(iso(d.ini))+' → '+esES(iso(d.fin))+' ('+d.sess.length+' días)').join(' | ')+'</p><div class="np" style="margin-top:10px"><button onclick="window.print()" style="padding:7px 16px;background:#1a3a5c;color:#fff;border:none;border-radius:5px;cursor:pointer">🖨 Imprimir / PDF</button></div></body></html>';
   window.open(URL.createObjectURL(new Blob([html],{type:'text/html'})),'_blank');
 }
 function exportarExcel(){
   if(!_org.length)return;if(typeof XLSX==='undefined'){alert('Necesitas internet para Excel.');return;}
   const wb=XLSX.utils.book_new();
+  const entXls=getEntidadNombre();
   _org.forEach(d=>{
-    const rows=[['ORGANIGRAMA — '+d.lbl],[d.c.codigo+' — '+d.c.nombre],['Turno: '+turnoLbl(d.turno)+' | '+esES(iso(d.ini))+' → '+esES(iso(d.fin))+' | '+d.sess.length+' días | '+d.c.horas_totales+'h'],[],['#','Fecha','Día','H.Ses.','H.Acum.']];
+    const teo=d.p.docTeo||d.c.docTeo||'',tal=d.p.docPra||d.c.docTal||'',seg=d.p.docSeg||d.c.docPRL||'';
+    const docsRow=[];if(teo)docsRow.push('📖 Teoría: '+teo);if(tal)docsRow.push('🔧 Taller: '+tal);if(seg)docsRow.push('⚠️ PRL: '+seg);
+    const entCurso=d.c.entidad||'';
+    const rows=[['ORGANIGRAMA — '+d.lbl],[d.c.codigo+' — '+d.c.nombre],['Turno: '+turnoLbl(d.turno)+' | '+esES(iso(d.ini))+' → '+esES(iso(d.fin))+' | '+d.sess.length+' días | '+d.c.horas_totales+'h'],['Entidad financiadora: '+(entCurso||entXls)],...(docsRow.length?[['Docentes: '+docsRow.join(' | ')]]:[]),[],['#','Fecha','Día','H.Ses.','H.Acum.']];
     const hTot=parseFloat(d.c.horas_totales),hD=parseFloat(d.p.hdia);let ac=0;
     d.sess.forEach((s,i)=>{const ul=i===d.sess.length-1,r=hTot%hD,hs=(ul&&r!==0)?r:hD;ac+=hs;rows.push([i+1,esES(iso(s)),DN[s.getDay()],hs+'h',ac.toFixed(1)+'h']);});
     const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:5},{wch:13},{wch:13},{wch:9},{wch:11}];
@@ -553,6 +693,7 @@ function exportarExcel(){
     const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:12},{wch:12},{wch:42},{wch:7},{wch:15},{wch:30}];
     XLSX.utils.book_append_sheet(wb,ws,'PRL');
   }
+  const cuAll=getCu();if(cuAll.length){const catRows=[['CATÁLOGO DE CURSOS'],['Código','Nombre','Área','H.Totales','H./Día','Tipo','Entidad','Doc. Teoría','Doc. Taller','Doc. PRL']];cuAll.forEach(c=>catRows.push([c.codigo,c.nombre,c.area||'',c.horas_totales,c.horas_diarias,c.tipo,c.entidad||'',c.docTeo||'',c.docTal||'',c.docPRL||'']));const wsCat=XLSX.utils.aoa_to_sheet(catRows);wsCat['!cols']=[{wch:12},{wch:35},{wch:12},{wch:10},{wch:8},{wch:28},{wch:20},{wch:22},{wch:22},{wch:22}];XLSX.utils.book_append_sheet(wb,wsCat,'Catálogo');}
   XLSX.writeFile(wb,'Organigrama_MEISA.xlsx');
 }
 let _iCurso=null,_fCurso=null;
@@ -560,7 +701,7 @@ function renderCursos(){
   const tb=G('tbody-cursos');tb.innerHTML='';
   getCu().forEach((c,i)=>{
     const tr=document.createElement('tr');if(i===_fCurso)tr.className='sel';
-    tr.innerHTML='<td><span class="badge" style="background:var(--pri);color:#fff">'+c.codigo+'</span></td><td>'+c.nombre+'</td><td>'+(c.area||'—')+'</td><td style="text-align:center">'+c.horas_totales+'h</td><td style="text-align:center">'+c.horas_diarias+'h</td><td><span class="badge" style="background:'+(c.tipo.includes('Cert')?'#d5f5e3':'#d6eaf8')+'">'+(c.tipo.includes('Cert')?'CP':'PF')+'</span> '+c.tipo+'</td>';
+    tr.innerHTML='<td><span class="badge" style="background:var(--pri);color:#fff">'+c.codigo+'</span></td><td>'+c.nombre+'</td><td>'+(c.area||'—')+'</td><td style="text-align:center">'+c.horas_totales+'h</td><td style="text-align:center">'+c.horas_diarias+'h</td><td><span class="badge" style="background:'+(c.tipo.includes('Cert')?'#d5f5e3':'#d6eaf8')+'">'+(c.tipo.includes('Cert')?'CP':'PF')+'</span> '+c.tipo+'</td>'+'<td>'+(c.entidad?'<span class="badge" style="background:#d6eaf8;color:#1a5276">'+c.entidad+'</span>':'<span style="color:var(--mut)">—</span>')+'</td>'+'<td style="font-size:10px;line-height:1.6">'+(c.docTeo?'📖 '+c.docTeo+'<br>':'')+(c.docTal?'🔧 '+c.docTal+'<br>':'')+(c.docPRL?'⚠️ '+c.docPRL:'')+((!c.docTeo&&!c.docTal&&!c.docPRL)?'<span style="color:var(--mut)">—</span>':'')+'</td>';
     tr.onclick=()=>{_fCurso=i;renderCursos();};tr.ondblclick=()=>{_fCurso=i;editarCursoSel();};
     tb.appendChild(tr);
   });
@@ -569,15 +710,24 @@ function abrirModalCurso(c=null,idx=null){
   _iCurso=idx;G('mc-titulo').textContent=c?'Editar Curso':'Nuevo Curso';
   G('mc-cod').value=c?.codigo||'';G('mc-nom').value=c?.nombre||'';G('mc-area').value=c?.area||'';
   G('mc-htot').value=c?.horas_totales||'';G('mc-hdia').value=c?.horas_diarias||7;G('mc-tipo').value=c?.tipo||'Programa Formativo';
+  G('mc-entidad').value=c?.entidad||'';
+  selDocentes();
+  const setDoc=(selId,inpId,val)=>{const s=G(selId),inp=G(inpId);if(s&&inp){const match=[...s.options].find(o=>o.value===val);if(match){s.value=val;inp.value='';inp.style.display='none';}else if(val){s.value='__custom__';inp.value=val;inp.style.display='';}else{s.value='';inp.value='';inp.style.display='none';}}};
+  setDoc('mc-doc-teo','mc-doc-teo-custom',c?.docTeo||'');
+  setDoc('mc-doc-tal','mc-doc-tal-custom',c?.docTal||'');
+  setDoc('mc-doc-prl','mc-doc-prl-custom',c?.docPRL||'');
   G('modal-curso').classList.add('open');
 }
 function guardarCurso(){
   const cod=G('mc-cod').value.trim(),nom=G('mc-nom').value.trim(),area=G('mc-area').value.trim();
   const htot=parseFloat(G('mc-htot').value),hdia=parseFloat(G('mc-hdia').value),tipo=G('mc-tipo').value;
-  if(!cod||!nom||isNaN(htot)||isNaN(hdia)){alert('Rellena todos los campos.');return;}
-  const cu=getCu();const nw={codigo:cod,nombre:nom,area,horas_totales:htot,horas_diarias:hdia,tipo};
+  if(!cod||!nom||isNaN(htot)||isNaN(hdia)){alert('Rellena código, nombre y horas.');return;}
+  const entidad=G('mc-entidad').value.trim();
+  const getDoc=(selId,inpId)=>{const s=G(selId);if(s.value==='__custom__')return G(inpId)?.value.trim()||'';return s.value||'';};
+  const docTeo=getDoc('mc-doc-teo','mc-doc-teo-custom'),docTal=getDoc('mc-doc-tal','mc-doc-tal-custom'),docPRL=getDoc('mc-doc-prl','mc-doc-prl-custom');
+  const cu=getCu();const nw={codigo:cod,nombre:nom,area,horas_totales:htot,horas_diarias:hdia,tipo,entidad,docTeo,docTal,docPRL};
   if(_iCurso!==null)cu[_iCurso]=nw;else cu.push(nw);
-  ls.s(K.cu,cu);G('modal-curso').classList.remove('open');renderCursos();showAlert('alert-cursos','Guardado.','ok');
+  ls.s(K.cu,cu);G('modal-curso').classList.remove('open');renderCursos();renderAsignaciones();showAlert('alert-cursos','Guardado.','ok');
 }
 function editarCursoSel(){if(_fCurso===null){alert('Selecciona un curso.');return;}abrirModalCurso(getCu()[_fCurso],_fCurso);}
 function eliminarCursoSel(){
@@ -592,15 +742,15 @@ function importarFichero(inp){
     let filas=[];
     if(ext==='csv'){const txt=e.target.result,sep=txt.includes(';')?';':',';const lns=txt.split(/\r?\n/).filter(l=>l.trim());const hds=lns[0].split(sep).map(h=>h.trim().replace(/"/g,''));for(let i=1;i<lns.length;i++){const vs=lns[i].split(sep).map(v=>v.trim().replace(/"/g,''));const row={};hds.forEach((h,j)=>row[h]=vs[j]||'');filas.push(row);}}
     else{if(typeof XLSX==='undefined'){alert('Necesitas internet.');return;}const wb2=XLSX.read(new Uint8Array(e.target.result),{type:'array'});filas=XLSX.utils.sheet_to_json(wb2.Sheets[wb2.SheetNames[0]],{defval:''});}
-    const ali={cod:['codigo','código','code'],nom:['nombre','name','denominacion'],htot:['horas_totales','horas totales','horas'],hdia:['horas_diarias','horas diarias','horas_dia'],tipo:['tipo','type'],area:['area','área']};
+    const ali={cod:['codigo','código','code'],nom:['nombre','name','denominacion'],htot:['horas_totales','horas totales','horas'],hdia:['horas_diarias','horas diarias','horas_dia'],tipo:['tipo','type'],area:['area','área'],ent:['entidad','entidad_financiadora','financiadora'],dteo:['doc_teo','docente_teo','docente_teoria','docente teoría'],dtal:['doc_tal','docente_tal','docente_taller','docente taller'],dprl:['doc_prl','docente_prl','docente prl']};
     const find=(row,ks)=>{for(const k of Object.keys(row)){if(ks.includes(k.toLowerCase().trim()))return row[k];}return '';};
     const cu=getCu();let imp=0,err=0;
-    filas.forEach(f=>{try{const cod=String(find(f,ali.cod)).trim(),nom=String(find(f,ali.nom)).trim();const htot=parseFloat(find(f,ali.htot)),hdia=parseFloat(find(f,ali.hdia));if(!cod||!nom||isNaN(htot)||isNaN(hdia)||htot<=0){err++;return;}const tr2=String(find(f,ali.tipo)).toLowerCase();const tipo=tr2.includes('certif')?'Certificado de Profesionalidad':'Programa Formativo';const area=String(find(f,ali.area)).trim();const nw={codigo:cod,nombre:nom,area,horas_totales:htot,horas_diarias:hdia,tipo};const ex=cu.findIndex(c=>c.codigo===cod);if(ex>=0)cu[ex]=nw;else cu.push(nw);imp++;}catch{err++;}});
+    filas.forEach(f=>{try{const cod=String(find(f,ali.cod)).trim(),nom=String(find(f,ali.nom)).trim();const htot=parseFloat(find(f,ali.htot)),hdia=parseFloat(find(f,ali.hdia));if(!cod||!nom||isNaN(htot)||isNaN(hdia)||htot<=0){err++;return;}const tr2=String(find(f,ali.tipo)).toLowerCase();const tipo=tr2.includes('certif')?'Certificado de Profesionalidad':'Programa Formativo';const area=String(find(f,ali.area)).trim();const entidad=String(find(f,ali.ent)).trim(),docTeo=String(find(f,ali.dteo)).trim(),docTal=String(find(f,ali.dtal)).trim(),docPRL=String(find(f,ali.dprl)).trim();const nw={codigo:cod,nombre:nom,area,horas_totales:htot,horas_diarias:hdia,tipo,entidad,docTeo,docTal,docPRL};const ex=cu.findIndex(c=>c.codigo===cod);if(ex>=0)cu[ex]=nw;else cu.push(nw);imp++;}catch{err++;}});
     ls.s(K.cu,cu);renderCursos();showAlert('alert-cursos','Importados: '+imp+(err?' | Errores: '+err:''),imp>0?'ok':'err');
   };
   ext==='csv'?r.readAsText(file,'UTF-8'):r.readAsArrayBuffer(file);inp.value='';
 }
-function descargarPlantilla(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeffcodigo;nombre;area;horas_totales;horas_diarias;tipo\r\nFAMEI26001;Montador Industrial;Metal;200;7;Programa Formativo\r\n'],{type:'text/csv;charset=utf-8'}));a.download='plantilla_cursos.csv';a.click();}
+function descargarPlantilla(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeffcodigo;nombre;area;horas_totales;horas_diarias;tipo;entidad;doc_teo;doc_tal;doc_prl\r\nFAMEI26001;Montador Industrial;Metal;200;7;Programa Formativo;SEPE;Juan García López;Pedro Martínez Ruiz;Ana Sánchez Gil\r\n'],{type:'text/csv;charset=utf-8'}));a.download='plantilla_cursos.csv';a.click();}
 let _fTeo=null;
 function selsCurso(...ids){ids.forEach(id=>{const s=G(id);if(!s)return;const v=s.value;s.innerHTML='<option value="">— General / Todos —</option>';getCu().forEach(c=>{const o=document.createElement('option');o.value=c.codigo;o.textContent=c.codigo+' — '+c.nombre;s.appendChild(o);});s.value=v;});}
 function añadirTeorica(){
@@ -713,6 +863,29 @@ function renderGantt(){
     mHead+='<div style="position:absolute;left:'+l+'%;width:'+w+'%;text-align:center;font-size:10px;font-weight:bold;color:var(--pri);background:var(--blue);padding:4px 2px;border-right:1px solid #c8d8e8;overflow:hidden;white-space:nowrap;box-sizing:border-box">'+MESES[m+1]+' <span style="font-size:9px;font-weight:normal">'+y+'</span></div>';
     curM=new Date(y,m+1,1);
   }
+  // Cabecera de días
+  let dHead='';
+  {
+    const mostrarNum=totalDays<=90;
+    const mostrarParcial=!mostrarNum&&totalDays<=180;
+    let curD=new Date(iniG);
+    while(curD<=finG){
+      const sd=Math.round((curD-iniG)/86400000);
+      const l=(sd/totalDays*100).toFixed(3);
+      const w=(1/totalDays*100).toFixed(3);
+      const dNum=curD.getDate();
+      const dw=curD.getDay();
+      const isWeekend=(dw===0||dw===6);
+      const fest=getFest(curD.getFullYear())[iso(curD)];
+      const showNum=mostrarNum||(mostrarParcial&&(dNum===1||dNum===5||dNum===10||dNum===15||dNum===20||dNum===25))||(!mostrarNum&&!mostrarParcial&&(dNum===1||dNum===10||dNum===20));
+      const bg=fest?'#fde8e8':isWeekend?'#e8ecf2':'#f4f7fb';
+      const col=fest?'#922b21':isWeekend?'#999':'#555';
+      const bdr=dNum===1?'border-left:1px solid #aed6f1;':'border-right:1px solid #e4eaf2;';
+      dHead+='<div title="'+esES(iso(curD))+' — '+DN[dw]+( fest?' ('+fest+')':'')+'" style="position:absolute;left:'+l+'%;width:'+w+'%;'+bdr+'background:'+bg+';text-align:center;font-size:8px;color:'+col+';overflow:hidden;box-sizing:border-box;height:100%;display:flex;align-items:center;justify-content:center;font-weight:'+(dNum===1?'bold':'normal')+'">'+
+        (showNum?String(dNum):'')+'</div>';
+      curD=addD(curD,1);
+    }
+  }
   // Líneas de semanas
   let semGuia='';
   let curS=new Date(iniG);while(curS.getDay()!==1)curS=addD(curS,1);
@@ -728,18 +901,22 @@ function renderGantt(){
     const sd=Math.round((new Date(d.ini)-iniG)/86400000);
     const ed=Math.round((new Date(d.fin)-iniG)/86400000);
     const l=(sd/totalDays*100).toFixed(2),w=((ed-sd+1)/totalDays*100).toFixed(2);
-    const labTip=d.lbl+' | '+turnoLbl(d.turno)+' | '+esES(iso(d.ini))+' → '+esES(iso(d.fin))+' | '+d.sess.length+' días | '+d.c.horas_totales+'h';
+    const docTeoStr=d.p.docTeo?'\n👨‍🏫 Docente: '+d.p.docTeo:'';
+    const docPraStr=d.p.docPra?'\n🔧 Práctica: '+d.p.docPra:'';
+    const docSegStr=d.p.docSeg?'\n⚠️ Seguridad: '+d.p.docSeg:'';
+    const labTip=d.lbl+' | '+turnoLbl(d.turno)+'\n📅 '+esES(iso(d.ini))+' → '+esES(iso(d.fin))+'\n📊 '+d.sess.length+' días · '+d.c.horas_totales+'h'+docTeoStr+docPraStr+docSegStr;
     // Teóricas vinculadas a este curso
     const dTeo=te.filter(t=>t.curso===d.c.codigo);
-    const tMarkers=dTeo.map(t=>mkMark(t.fecha,'#c9a700','📖 TEÓRICA\n'+d.lbl+'\n'+esES(t.fecha)+' · '+t.horas+'h\n'+t.desc)).join('');
+    const tMarkers=dTeo.map(t=>mkMark(t.fecha,'#c9a700','📖 TEÓRICA — '+d.lbl+'\n📅 '+esES(t.fecha)+'\n⏱ '+t.horas+'h\n📝 '+t.desc+(d.p.docTeo?'\n👨‍🏫 Docente: '+d.p.docTeo:''))).join('');
     // PRL vinculadas a este curso
     const dPrl=pl.filter(p=>p.curso===d.c.codigo);
-    const pMarkers=dPrl.map(p=>mkMark(p.fecha,'#e67e22','⚠️ PRL\n'+d.lbl+'\n'+esES(p.fecha)+' · '+p.horas+'h\n'+p.modulo)).join('');
+    const pMarkers=dPrl.map(p=>mkMark(p.fecha,'#e67e22','⚠️ PRL — '+d.lbl+'\n📅 '+esES(p.fecha)+'\n⏱ '+p.horas+'h\n📋 '+p.modulo+(p.desc&&p.desc!==p.modulo?'\n📝 '+p.desc:'')+(d.p.docSeg?'\n👨‍🏫 Docente: '+d.p.docSeg:''))).join('');
     const infoExtra=(dTeo.length?'<span style="font-size:9px;color:#7d6608;margin-right:5px">📖 '+dTeo.length+'</span>':'')+(dPrl.length?'<span style="font-size:9px;color:#784212">⚠️ '+dPrl.length+'</span>':'');
     return '<div style="display:flex;align-items:stretch;border-bottom:1px solid #e8eef4;min-height:46px">'+
       '<div style="width:200px;min-width:200px;padding:6px 10px;font-size:11px;line-height:1.5;background:#f4f7fb;border-right:3px solid '+d.bg+'">'+
         '<div style="font-weight:bold;color:var(--pri);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+d.c.nombre+'">'+d.lbl+'</div>'+
         '<div style="color:var(--mut);font-size:10px">'+turnoLbl(d.turno)+' · '+d.sess.length+'d · '+d.c.horas_totales+'h</div>'+
+        (d.c.entidad?'<div style="margin-top:2px"><span class="badge" style="background:#d6eaf8;color:#1a5276;font-size:9px">🏛 '+d.c.entidad+'</span></div>':'')+
         (infoExtra?'<div>'+infoExtra+'</div>':'')+
       '</div>'+
       '<div style="flex:1;position:relative;background:#fafcff;overflow:hidden">'+
@@ -766,8 +943,11 @@ function renderGantt(){
   const pie='<div style="display:flex;justify-content:space-between;padding:6px 0 0 200px;font-size:10px;color:var(--mut)"><span>'+esES(iso(iniG))+'</span><span>'+esES(iso(finG))+'</span></div>';
   div.innerHTML=
     '<div style="display:flex;align-items:stretch;border-bottom:2px solid var(--pri)">'+
-      '<div style="width:200px;min-width:200px;background:var(--pri);padding:7px 10px;font-size:11px;font-weight:bold;color:#fff">Curso / Turno</div>'+
-      '<div style="flex:1;position:relative;height:36px">'+mHead+'</div>'+
+      '<div style="width:200px;min-width:200px;background:var(--pri);padding:7px 10px;font-size:11px;font-weight:bold;color:#fff;display:flex;align-items:center">Curso / Turno</div>'+
+      '<div style="flex:1;display:flex;flex-direction:column;">'+
+        '<div style="position:relative;height:24px;border-bottom:1px solid #c8d8e8;">'+mHead+'</div>'+
+        '<div style="position:relative;height:20px;">'+dHead+'</div>'+
+      '</div>'+
     '</div>'+
     rows+rowGen+pie+
     '<div style="display:flex;flex-wrap:wrap;gap:10px;font-size:11px;padding:12px 0 4px;border-top:1px solid #e8eef4;margin-top:8px;align-items:center">'+
@@ -789,6 +969,32 @@ function exportarGanttHTML(){
   const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Gantt MEISA</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px}@page{size:A3 landscape;margin:10mm}header{background:#1a3a5c;color:#fff;padding:10px 15px;margin-bottom:10px}header h1{font-size:13px}header p{font-size:9px;opacity:.75}table{width:100%;border-collapse:collapse}.mhead{width:100%;position:relative;height:34px;border-bottom:2px solid #1a3a5c}.np{display:none}@media print{.np{display:none}}</style></head><body><header><h1>DIAGRAMA DE GANTT — MEISA Formación Los Barrios (Cádiz)</h1><p>'+esES(HOY)+' · '+esES(iso(iniG))+' → '+esES(iso(finG))+'</p></header><table><thead><tr><th style="width:180px;background:#1a3a5c;color:#fff;padding:7px 10px;text-align:left;font-size:11px">Curso / Turno</th><th style="padding:0"><div class="mhead">'+mHead+'</div></th></tr></thead><tbody>'+rows2+'</tbody></table><div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;font-size:10px">'+_org.map(d=>'<span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:'+d.bg+';vertical-align:middle;margin-right:3px"></span>'+d.lbl+'</span>').join('')+'</div><div class="np" style="margin-top:10px"><button onclick="window.print()" style="padding:7px 16px;background:#1a3a5c;color:#fff;border:none;border-radius:5px;cursor:pointer">🖨 Imprimir / PDF</button></div></body></html>';
   window.open(URL.createObjectURL(new Blob([html],{type:'text/html'})),'_blank');
 }
+function cambiarEntidad(){
+  const t=G('ent-tipo').value;
+  G('ent-otro-wrap').style.display=t==='otro'?'':'none';
+  guardarEntidad();
+}
+function guardarEntidad(){
+  const t=G('ent-tipo').value,o=(G('ent-otro').value||'').trim();
+  ls.s(K.en,{tipo:t,otro:o});
+  actualizarEntidadDisplay();
+}
+function actualizarEntidadDisplay(){
+  const en=getEn();
+  const nombre=en.tipo==='otro'?(en.otro||''):(en.tipo||'');
+  const d=G('ent-display');
+  if(nombre){d.style.display='';d.textContent='✓ '+nombre;}else{d.style.display='none';d.textContent='';}
+}
+function initEntidad(){
+  const en=getEn();
+  if(G('ent-tipo'))G('ent-tipo').value=en.tipo||'';
+  if(G('ent-otro'))G('ent-otro').value=en.otro||'';
+  if(en.tipo==='otro'&&G('ent-otro-wrap'))G('ent-otro-wrap').style.display='';
+  actualizarEntidadDisplay();
+}
+function getEntidadNombre(){
+  const en=getEn();return en.tipo==='otro'?(en.otro||'Sin especificar'):(en.tipo||'Sin especificar');
+}
 const CURSOS_DEFAULT=[
   {codigo:'FMEC17EXP',nombre:'Soldadura Básica Nivel 1',area:'Soldadura',horas_totales:200,horas_diarias:7,tipo:'Programa Formativo'},
   {codigo:'FMEC0219',nombre:'Soldadura TIG (Cert. Prof.)',area:'Soldadura',horas_totales:410,horas_diarias:7,tipo:'Certificado de Profesionalidad'},
@@ -801,11 +1007,108 @@ const CURSOS_DEFAULT=[
 ];
 if(!getCu().length)ls.s(K.cu,CURSOS_DEFAULT);
 [G('mp-inicio'),G('t-fecha'),G('prl-fecha')].forEach(el=>{if(el)el.value=HOY;});
-renderListaProg();renderCursos();
+renderListaProg();renderCursos();initEntidad();initDocentes();
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){['modal-prog','modal-curso'].forEach(id=>G(id)?.classList.remove('open'));}
   if(e.key==='Enter'&&G('modal-curso')?.classList.contains('open'))guardarCurso();
 });
+const ESPEC_LABELS={soldadura:'🔧 Soldadura',tuberia:'🔧 Tuberías',mecanica:'🔧 Mecánica',electricidad:'⚡ Electricidad',electronica:'⚡ Electrónica',teoria:'📖 Teoría General',prl:'⚠️ PRL / Seguridad',general:'📚 General'};
+const _fDoc=null;
+let _iDoc=null,_fDoc=null;
+function renderDocentes(){
+  const tb=G('tbody-docentes'),dc=getDc();
+  tb.innerHTML='';
+  dc.forEach((d,i)=>{
+    const tr=document.createElement('tr');
+    if(i===_fDoc)tr.className='sel';
+    const espec= ESPEC_LABELS[d.espec]||d.espec||'📚 General';
+    const contacto=(d.tel?'📞 '+d.tel:'')+(d.email?' ✉️ '+d.email:'');
+    tr.innerHTML='<td><strong>'+d.nombre+'</strong></td><td>'+(d.dni||'—')+'</td><td>'+espec+'</td><td style="font-size:10px">'+contacto+'</td><td style="font-size:10px;color:var(--mut)">'+(d.notas||'—')+'</td>';
+    tr.onclick=()=>{_fDoc=i;renderDocentes();};
+    tr.ondblclick=()=>{_fDoc=i;editarDocenteSel();};
+    tb.appendChild(tr);
+  });
+  const stats=G('doc-stats');
+  const espStats={};
+  dc.forEach(d=>{const e=d.espec||'general';espStats[e]=(espStats[e]||0)+1;});
+  stats.innerHTML=dc.length
+    ?'<strong>'+dc.length+'</strong> docentes registrados<br>'+Object.entries(espStats).map(([k,c])=>ESPEC_LABELS[k]+': <strong>'+c+'</strong>').join('<br>')
+    :'<em>Sin docentes registrados.</em>';
+  renderAsignaciones();
+}
+function renderAsignaciones(){
+  const dc=getDc(),cu=getCu(),pr=getPr();
+  const div=G('doc-asignaciones');
+  if(!dc.length){div.innerHTML='<p style="color:var(--mut)">Registra docentes para ver sus asignaciones.</p>';return;}
+  div.innerHTML=dc.map(d=>{
+    const cursosTeo=cu.filter(c=>c.docTeo&&c.docTeo.toLowerCase().includes(d.nombre.toLowerCase()));
+    const cursosTal=cu.filter(c=>c.docTal&&c.docTal.toLowerCase().includes(d.nombre.toLowerCase()));
+    const cursosPRL=cu.filter(c=>c.docPRL&&c.docPRL.toLowerCase().includes(d.nombre.toLowerCase()));
+    const prTeo=pr.filter(p=>{const c=cu[p.idx];return c&&c.docTeo&&c.docTeo.toLowerCase().includes(d.nombre.toLowerCase());});
+    const prTal=pr.filter(p=>{const c=cu[p.idx];return c&&c.docTal&&c.docTal.toLowerCase().includes(d.nombre.toLowerCase());});
+    const prPRL=pr.filter(p=>{const c=cu[p.idx];return c&&c.docPRL&&c.docPRL.toLowerCase().includes(d.nombre.toLowerCase());});
+    const total=prTeo.length+prTal.length+prPRL.length;
+    if(!total)return'<div style="padding:6px 0;border-bottom:1px solid #eaeff5"><strong>'+d.nombre+'</strong> — <span style="color:var(--mut)">Sin asignaciones activas</span></div>';
+    return'<div style="padding:6px 0;border-bottom:1px solid #eaeff5"><strong>'+d.nombre+'</strong> <span class="badge" style="background:var(--pri);color:#fff;font-size:9px">'+ESPEC_LABELS[d.espec]+'</span><br>'
+      +(prTeo.length?'<span style="font-size:10px;color:#1a5276">📖 Teoría: '+prTeo.map(p=>cu[p.idx]?.codigo||'?').join(', ')+'</span><br>':'')
+      +(prTal.length?'<span style="font-size:10px;color:#784212">🔧 Taller: '+prTal.map(p=>cu[p.idx]?.codigo||'?').join(', ')+'</span><br>':'')
+      +(prPRL.length?'<span style="font-size:10px;color:#922b21">⚠️ PRL: '+prPRL.map(p=>cu[p.idx]?.codigo||'?').join(', ')+'</span>':'')
+      +'</div>';
+  }).join('');
+}
+function guardarDocente(){
+  const nombre=G('doc-nombre').value.trim(),dni=G('doc-dni').value.trim();
+  const espec=G('doc-espec').value,tel=G('doc-tel').value.trim(),email=G('doc-email').value.trim(),notas=G('doc-notas').value.trim();
+  if(!nombre){alert('El nombre es obligatorio.');return;}
+  const dc=getDc();
+  if(_iDoc!==null){dc[_iDoc]={nombre,dni,espec,tel,email,notas};}else{dc.push({nombre,dni,espec,tel,email,notas});}
+  ls.s(K.dc,dc);_iDoc=null;
+  G('doc-nombre').value='';G('doc-dni').value='';G('doc-espec').value='soldadura';G('doc-tel').value='';G('doc-email').value='';G('doc-notas').value='';
+  renderDocentes();
+  selDocentes();
+  showAlert('alert-doc','Docente guardado.','ok');
+}
+function editarDocenteSel(){
+  if(_fDoc===null){alert('Selecciona un docente.');return;}
+  const d=getDc()[_fDoc];
+  _iDoc=_fDoc;
+  G('doc-nombre').value=d.nombre||'';G('doc-dni').value=d.dni||'';G('doc-espec').value=d.espec||'general';
+  G('doc-tel').value=d.tel||'';G('doc-email').value=d.email||'';G('doc-notas').value=d.notas||'';
+  showAlert('alert-doc','Editando: '+d.nombre+'. Guarda cuando termines.','err');
+}
+function eliminarDocenteSel(){
+  if(_fDoc===null){alert('Selecciona un docente.');return;}
+  const d=getDc()[_fDoc];
+  if(!confirm('¿Eliminar a '+d.nombre+'?'))return;
+  const dc=getDc();dc.splice(_fDoc,1);ls.s(K.dc,dc);
+  _fDoc=null;_iDoc=null;
+  G('doc-nombre').value='';G('doc-dni').value='';G('doc-espec').value='soldadura';
+  G('doc-tel').value='';G('doc-email').value='';G('doc-notas').value='';
+  renderDocentes();selDocentes();
+  showAlert('alert-doc','Docente eliminado.','ok');
+}
+function selDocentes(){
+  ['mc-doc-teo','mc-doc-tal','mc-doc-prl','mp-doc-teo','mp-doc-pra','mp-doc-seg'].forEach(id=>{
+    const s=G(id);if(!s)return;
+    const v=s.value,opts=s.querySelectorAll('option');
+    const isCustom=opts.length<=1||(v&&![...opts].some(o=>o.value===v));
+    s.innerHTML='';
+    const ph=document.createElement('option');ph.value='';ph.textContent='— No asignado —';s.appendChild(ph);
+    const ph2=document.createElement('option');ph2.value='__custom__';ph2.textContent='✏️ Otro (escribir)...';s.appendChild(ph2);
+    getDc().forEach(d=>{const o=document.createElement('option');o.value=d.nombre;o.textContent=d.nombre+' ('+ESPEC_LABELS[d.espec]+')';s.appendChild(o);});
+    if(isCustom&&v){s.value='__custom__';const inp=s.nextElementSibling;if(inp&&inp.dataset.custom==='1')inp.value=v;}
+    else{s.value=v;}
+  });
+}
+function handleCustomDoc(select,customId){
+  const inp=G(customId);if(!inp)return;
+  if(select.value==='__custom__'){inp.style.display='';inp.focus();}
+  else{inp.style.display='none';inp.value='';}
+}
+function initDocentes(){
+  selDocentes();
+  renderDocentes();
+}
 </script>
 </body>
 </html>
