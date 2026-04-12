@@ -301,8 +301,10 @@ function leerExcel(e) {
             cursoIdx = headers.findIndex(h => String(h).toLowerCase().includes(kw));
             if (cursoIdx !== -1) break;
           }
-          console.log('Indice de curso:', cursoIdx);
+          console.log('Indice de curso:', cursoIdx, 'Headers:', headers);
           if (cursoIdx !== -1) {
+            const cursoValor = row[cursoIdx];
+            console.log('Valor del curso:', cursoValor);
             const cursoVal = String(row[cursoIdx] || '').toLowerCase();
             if (cursoVal.includes('sold') || cursoVal.includes('soldador')) modalidad = 'soldadura';
             else if (cursoVal.includes('tub') || cursoVal.includes('tubero')) modalidad = 'tuberia';
