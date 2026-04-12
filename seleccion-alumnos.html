@@ -169,6 +169,23 @@ function detectarModalidad(obj, headers) {
   return undefined;
 }
 
+function detectarFilaCabeceras(json) {
+  // Buscar la fila que contiene las cabeceras (primera con datos en columna NOMBRE)
+  for (let i = 0; i < Math.min(5, json.length); i++) {
+    const row = json[i];
+    if (!row) continue;
+    // Buscar una celda que contenga "nombre" o similar
+    for (let j = 0; j < row.length; j++) {
+      const val = String(row[j] || '').toLowerCase();
+      if (val.includes('nombre') || val.includes('name') || val.includes('alumno')) {
+        console.log('Cabeceras encontradas en fila:', i);
+        return i;
+      }
+    }
+  }
+  return 0; // Por defecto fila 0
+}
+
 function leerExcel(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -187,8 +204,11 @@ function leerExcel(e) {
         alert('El archivo está vacío o no tiene datos');
         return;
       }
-      const headers = json[0].map(String);
-      console.log('Cabeceras:', headers);
+      
+      // Detectar fila de cabeceras
+      const filaCabeceras = detectarFilaCabeceras(json);
+      const headers = json[filaCabeceras].map(String);
+      console.log('Cabeceras detectadas:', headers);
       console.log('Primera fila de datos:', json[1]);
       
       if (headers.length === 0 || !headers[0]) {
@@ -197,9 +217,7 @@ function leerExcel(e) {
       }
       
       const nuevosAlumnos = [];
-      for (let i = 1; i < json.length; i++) {
-      const nuevosAlumnos = [];
-      for (let i = 1; i < json.length; i++) {
+      for (let i = filaCabeceras + 1; i < json.length; i++) {
         const row = json[i];
         console.log('Fila', i, ':', row);
         if (!row || row.length === 0) continue;
