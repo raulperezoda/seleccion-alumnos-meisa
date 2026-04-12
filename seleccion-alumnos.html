@@ -99,10 +99,10 @@ function esNombreFemenino(nombre) {
   return NOMBRES_FEMENINOS.has(primeroSinAcentos) || NOMBRES_FEMENINOS.has(primero);
 }
 
-const MODALIDADES = ['soldadura', 'tuberia', 'montador', 'todos'];
+const MODALIDADES = ['soldador', 'tubero', 'montador', 'todos'];
 const MODALIDADES_COLORES = {
-  'soldadura': '#f59e0b',
-  'tuberia': '#3b82f6',
+  'soldador': '#f59e0b',
+  'tubero': '#3b82f6',
   'montador': '#10b981',
   'todos': '#6366f1'
 };
@@ -244,6 +244,7 @@ function leerExcel(e) {
       const filaCabeceras = detectarFilaCabeceras(json);
       const headers = json[filaCabeceras].map(String);
       console.log('Cabeceras detectadas:', headers);
+      console.log('Total de filas en json:', json.length);
       
       // Buscar índice de columna NOMBRE
       const nombreIdx = headers.findIndex(h => String(h).toLowerCase().includes('nombre'));
@@ -263,10 +264,15 @@ function leerExcel(e) {
       console.log('Indice de edad:', edadIdx, '/ usando:', edadColumnaIdx);
       
       const nuevosAlumnos = [];
+      console.log('Procesando desde fila', filaCabeceras + 1, 'hasta', json.length);
       
       for (let i = filaCabeceras + 1; i < json.length; i++) {
         const row = json[i];
-        if (!row || (Array.isArray(row) && row.length === 0)) continue;
+        // Mostrar cada fila que se salta
+        if (!row || (Array.isArray(row) && row.length === 0)) {
+          console.log('Fila', i, 'vacía');
+          continue;
+        }
         
         let nombre = '';
         if (Array.isArray(row)) {
@@ -304,13 +310,22 @@ function leerExcel(e) {
           console.log('Indice de curso:', cursoIdx, 'Headers:', headers);
           if (cursoIdx !== -1) {
             const cursoValor = row[cursoIdx];
-            console.log('Valor del curso:', cursoValor);
-            const cursoVal = String(row[cursoIdx] || '').toLowerCase();
-            if (cursoVal.includes('sold') || cursoVal.includes('soldador')) modalidad = 'soldadura';
-            else if (cursoVal.includes('tub') || cursoVal.includes('tubero')) modalidad = 'tuberia';
-            else if (cursoVal.includes('mont')) modalidad = 'montador';
-            else modalidad = cursoVal;
-            curso = cursoVal;
+            const cursoVal = String(cursoValor || '').toLowerCase();
+            console.log('Valor del curso:', cursoVal);
+            
+            if (cursoVal.includes('sold')) {
+              modalidad = 'soldador';
+              curso = 'Soldador';
+            } else if (cursoVal.includes('tub') || cursoVal.includes('tubero')) {
+              modalidad = 'tubero';
+              curso = 'Tubero';
+            } else if (cursoVal.includes('mont')) {
+              modalidad = 'montador';
+              curso = 'Montador';
+            } else {
+              modalidad = cursoVal;
+              curso = cursoVal;
+            }
           }
         }
         
@@ -357,8 +372,11 @@ function getAlumnosFiltrados() {
       const modLower = a.modalidad.toLowerCase();
       const filtro = state.modalidadSeleccionada;
       // Para tubería también incluir "tubero"
-      if (filtro === 'tuberia') {
+      if (filtro === 'tubero') {
         return modLower.includes('tub') || modLower.includes('tubero');
+      }
+      if (filtro === 'soldador') {
+        return modLower.includes('sold');
       }
       return modLower.includes(filtro.substring(0, 3));
     });
