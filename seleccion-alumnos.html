@@ -242,6 +242,7 @@ function leerExcel(e) {
       
       // Detectar fila de cabeceras
       const filaCabeceras = detectarFilaCabeceras(json);
+      const headers = json[filaCabeceras].map(String);
       console.log('Cabeceras detectadas:', headers);
       
       // Buscar índice de columna NOMBRE
