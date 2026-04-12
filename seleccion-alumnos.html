@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Selección de Alumnos MEISA</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div id="app" class="max-w-7xl mx-auto p-4"></div>
+
+<script>
+const NOMBRES_FEMENINOS = new Set([
+  'maria','maría','rosa','isabel','carmen','julia','ana','laura','silvia','sara',
+  'elena','marta','paula','natalia','clara','irene','alicia','beatriz','lucía','lucia',
+  'sofía','cristina','patricia','verónica','veronica','monica','mónica','eva','andrea',
+  'raquel','susana','nuria','noelia','miriam','lorena','alba','ines','aitana','esther',
+  'vanessa','gloria','angela','marian','montse','montserrat','mercedes','margarita',
+  'rosario','asunción','luisa','pilar','teresa','concepción','marisol','aurora','lolita',
+  'lola','magdalena','amanda','gemma','nicole','mireia','naomi','judit','catalina',
+  'cecilia','florencia','emilia','marina','adriana','diana','karina','gabriela','valeria',
+  'emily','karol','stephanie','nathalie','celeste','belén','belen','gema','vanesa',
+  'estela','mayte','maite','rosana','rocío','rocio','alejandra','alexandra','samanta',
+  'samantha','carla','carolina','loreto','belen','camila','candela','carme','carola',
+  'claudia','dafne','dalila','debora','delia','eliana','elisabet','ellen','elma',
+  'estefanía','estefania','eugenia','evelyn','fabiola','fanny','fatima','fiona','frida',
+  'guadalupe','heidi','iris','ivanna','jenny','jessica','josefina','joy','juanita',
+  'juliana','juliet','katia','kelly','kendra','kenia','keren','kimberly','kristel',
+  'laura','lauren','leah','leigh','lena','leticia','lidia','liliana','lina','lisa',
+  'lora','louise','luciana','lucila','lydia','lynn','macarena','madison','mafalda',
+  'malena','manuela','marcela','marta','martina','maría','mary','matilde','maude',
+  'maura','melanie','melba','melinda','melissa','melody','meredith','mery','michelle',
+  'mila','milagros','mireya','miriam','monique','nancy','natasha','nelly','nidia',
+  'noemi','nora','norma','olga','olivia','paola','penélope','penelope','priscilla',
+  'rachel','ramona','rebecca','reina','renata','rosa','rosalie','rosalyn','rosanna',
+  'sabina','sabrina','sadie','samantha','sandra','sandy','sara','sarita','selena',
+  'shannon','sharon','sheila','shirley','sierra','silvia','simone','sonia','sonja',
+  'sophie','stacy','stella','stephanie','susan','susana','suzanne','talia','tamara',
+  'tania','tanya','tara','teresa','tiana','tiffany','tina','toni','tracy','trish',
+  'trudy','ursula','valentina','valeria','valerie','vanessa','velma','vera','verónica',
+  'vicki','vicky','victoria','violeta','virginia','vivian','viviana','wendy','wilma',
+  'xena','yanira','yolanda','yvette','yvonne','zara','zoe','abigail','adele','adrienne',
+  'aileen','aimee','alejandra','alessandra','alexia','alexis','allie','amber','amelia',
+  'amy','anabel','anabella','anastasia','angel','angela','angelina','anita','ann',
+  'anna','annabel','anne','annie','ariadna','ashley','audrey','ava','bailey','barbara',
+  'bea','beatrice','becky','bella','bethany','betty','bianca','blanca','bonnie','brandi',
+  'brandy','bridget','brittany','brittney','brooke','brooklyn','caitlin','camilla',
+  'camille','carina','carol','caroline','carolyn','carrie','cassandra','cassie',
+  'cecelia','charlotte','chelsea','cher','cherry','cheryl','chloe','christina','christine',
+  'chrystal','cindy','clare','claudia','colleen','courtney','daisy','dana','daniela',
+  'daphne','dawn','debbie','debra','denise','desiree','destiny','diane','donna','doris',
+  'edith','eileen','elaine','elisa','elisabeth','elise','ella','elsie','emma','erica',
+  'erika','erin','esme','faith','felicia','felicity','fernanda','flor','flora',
+  'francine','francisca','frankie','gabriella','gail','georgia','gillian','gina',
+  'gladys','grace','greta','hailey','hannah','hazel','heather','helen','holly','isabel',
+  'isabella','jackie','jaclyn','jacqueline','jade','jamie','jane','janet','janice',
+  'jasmine','jean','jeanne','jennifer','jessie','jill','jillian','joanna','joanne',
+  'jocelyn','jodi','jodie','jody','joelle','joyce','judith','julie','karen','kari',
+  'karin','karina','karissa','karla','kasey','kate','katharine','katherine','kathie',
+  'kathleen','kathryn','kathy','kati','katie','katina','kay','kaye','kayla','kaylee',
+  'kelly','kelsey','kendall','keri','kerri','kerry','kiara','kim','kimberley','kimberly',
+  'kira','kirsten','kirstie','kirsty','kori','kristen','kristi','kristie','kristin',
+  'kristina','kristine','kristy','kristyn','kylie','lacey','laila','lana','lara',
+  'latoya','laurie','leila','lesley','leslie','lilian','linda','lindsay','lindy','liz',
+  'liza','lola','lora','lori','lorie','lorraine','lucille','lucy','mabel','maci',
+  'mackenzie','mae','magdalena','maggie','mandy','marcella','marcia','margaret',
+  'margie','mariana','marianela','marie','marilyn','marissa','marita','marla',
+  'marlene','marsha','martha','maryanne','maryellen','masha','maureen','maxine',
+  'megan','meghan','merry','meryl','mia','michaela','mika','miley','milly','mimi',
+  'mirella','molli','morgan','natty','nayeli','neva','nichole','nina','noel','noelia',
+  'paige','pam','pamela','patrice','patsy','patty','penny','petra','phyllis','queen',
+  'quiana','quinn','rae','raven','reba','rebel','reese','renee','rhonda','ria',
+  'richelle','rita','robbie','roberta','robin','robyn','rochelle','rosanne','sami',
+  'samira','sasha','scarlet','scarlett','serena','shanna','shari','sharyn','sheila',
+  'shelia','shelley','shelly','sheri','sherri','sherrie','sherry','shirley','stacey',
+  'stacie','stefani','stefanie','stephani','summer','sunny','susie','suzy','sybil',
+  'sydnee','sydney','tami','tamika','tammi','tammie','tammy','tanisha','taryn','tasha',
+  'tatiana','teri','terra','terri','terrie','theresa','tierra','tiffani','tiffanie',
+  'tilda','tonia','tonya','tracey','traci','tracie','tricia','trista','tyra','ultra',
+  'una','valencia','verna','vernice','vernita','vickie','violet','whitney','winnie',
+  'ximena','yasmin','zelda','zula','lore','pili','nati','celi','moli','mili','july',
+  'vane','gaby','cami','caro','deby','janeth','jen','jeni','luli','tati','mayra','loli',
+  'carol','fany','mire','noe','sisi','tomy','yoli'
+]);
+
+function esNombreFemenino(nombre) {
+  if (!nombre) return false;
+  const primero = nombre.trim().toLowerCase().split(' ')[0];
+  const primeroSinAcentos = primero
+    .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i')
+    .replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ü/g, 'u');
+  return NOMBRES_FEMENINOS.has(primeroSinAcentos) || NOMBRES_FEMENINOS.has(primero);
+}
+
+const MODALIDADES = ['soldadura', 'tubería', 'montador', 'todos'];
+const MODALIDADES_COLORES = {
+  'soldadura': '#f59e0b',
+  'tubería': '#3b82f6',
+  'montador': '#10b981',
+  'todos': '#6366f1'
+};
+
+let state = {
+  alumnos: [],
+  seleccionados: [],
+  reservas: [],
+  modalidadSeleccionada: 'todos',
+  numPrincipales: 15,
+  numReservas: 5,
+  pestana: 'seleccion',
+  busqueda: '',
+  paginaActual: 1,
+  mostrarFiltros: false
+};
+const porPagina = 50;
+
+function detectarColumnas(headers) {
+  const visibles = new Set();
+  const posiblesNombres = ['nombre', 'name', 'alumno', 'estudiante', 'candidate', 'candidato', 'apellidos', 'surname'];
+  const posiblesEdad = ['edad', 'age', 'años', 'ano', 'years'];
+  const posiblesEstudios = ['estudios', 'studies', 'educacion', 'education', 'formacion', 'formación', 'titulacion', 'título'];
+  const posiblesExperiencia = ['experiencia', 'experience', 'exp', 'trabajo', 'work'];
+  const posiblesModalidad = ['modalidad', 'modality', 'especialidad', 'specialty', 'curso', 'course'];
+  headers.forEach(h => {
+    const lower = h.toLowerCase().trim();
+    if (posiblesNombres.some(p => lower.includes(p))) visibles.add('nombre');
+    else if (posiblesEdad.some(p => lower.includes(p))) visibles.add('edad');
+    else if (posiblesEstudios.some(p => lower.includes(p))) visibles.add('estudios');
+    else if (posiblesExperiencia.some(p => lower.includes(p))) visibles.add('experiencia');
+    else if (posiblesModalidad.some(p => lower.includes(p))) visibles.add('modalidad');
+    else visibles.add(h);
+  });
+  return visibles;
+}
+
+function detectarEdad(obj, headers) {
+  const posibles = ['edad', 'age', 'años', 'ano', 'years'];
+  for (const h of headers) {
+    if (posibles.some(p => h.toLowerCase().includes(p))) {
+      const val = obj[h];
+      if (typeof val === 'number') return val;
+      if (typeof val === 'string') {
+        const num = parseInt(val);
+        if (!isNaN(num)) return num;
+      }
+    }
+  }
+  return undefined;
+}
+
+function detectarModalidad(obj, headers) {
+  const posibles = ['modalidad', 'modality', 'especialidad', 'specialty'];
+  for (const h of headers) {
+    if (posibles.some(p => h.toLowerCase().includes(p))) {
+      const val = String(obj[h] || '').toLowerCase().trim();
+      if (val.includes('sold')) return 'soldadura';
+      if (val.includes('tub')) return 'tubería';
+      if (val.includes('mont')) return 'montador';
+      return val;
+    }
+  }
+  return undefined;
+}
+
+function leerExcel(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    try {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      if (json.length < 2) return;
+      const headers = json[0].map(String);
+      const nuevosAlumnos = [];
+      for (let i = 1; i < json.length; i++) {
+        const row = json[i];
+        if (!row || row.length === 0) continue;
+        const obj = {};
+        headers.forEach((h, idx) => { obj[h] = row[idx]; });
+        const nombre = String(obj[headers[0]] || obj['Nombre'] || '').trim();
+        if (!nombre) continue;
+        nuevosAlumnos.push({
+          id: 'alum-' + i,
+          nombre,
+          edad: detectarEdad(obj, headers),
+          estudios: String(obj[headers.find(h => h.toLowerCase().includes('estudio'))] || ''),
+          experiencia: String(obj[headers.find(h => h.toLowerCase().includes('experiencia'))] || ''),
+          modalidad: detectarModalidad(obj, headers),
+          curso: String(obj[headers.find(h => h.toLowerCase().includes('curso'))] || ''),
+          seleccionado: false,
+          esReserva: false,
+          esEvitable: false
+        });
+      }
+      state.alumnos = nuevosAlumnos;
+      state.seleccionados = [];
+      state.reservas = [];
+      state.paginaActual = 1;
+      render();
+    } catch (err) {
+      console.error('Error leyendo Excel:', err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function getAlumnosFiltrados() {
+  let result = [...state.alumnos];
+  if (state.busqueda) {
+    const lower = state.busqueda.toLowerCase();
+    result = result.filter(a => 
+      a.nombre.toLowerCase().includes(lower) ||
+      (a.estudios && a.estudios.toLowerCase().includes(lower)) ||
+      (a.experiencia && a.experiencia.toLowerCase().includes(lower))
+    );
+  }
+  if (state.modalidadSeleccionada !== 'todos') {
+    result = result.filter(a => {
+      if (!a.modalidad) return false;
+      return a.modalidad.toLowerCase().includes(state.modalidadSeleccionada.substring(0, 3));
+    });
+  }
+  return result;
+}
+
+function seleccionarAleatorio() {
+  const disponibles = getAlumnosFiltrados().filter(a => !a.seleccionado && !a.esEvitable);
+  if (disponibles.length === 0) return;
+  const shuffled = [...disponibles].sort(() => Math.random() - 0.5);
+  const mujeres = disponibles.filter(a => esNombreFemenino(a.nombre));
+  const principales = [];
+  const reservasArr = [];
+  
+  if (mujeres.length > 0 && state.numPrincipales > 1) {
+    const mujerElegida = mujeres[Math.floor(Math.random() * mujeres.length)];
+    principales.push({ ...mujerElegida, seleccionado: true });
+    const restantes = disponibles.filter(a => a.id !== mujerElegida.id);
+    const resto = [...restantes].sort(() => Math.random() - 0.5);
+    for (let i = 0; i < state.numPrincipales - 1 && i < resto.length; i++) {
+      principales.push({ ...resto[i], seleccionado: true });
+    }
+  } else {
+    for (let i = 0; i < state.numPrincipales && i < shuffled.length; i++) {
+      principales.push({ ...shuffled[i], seleccionado: true });
+    }
+  }
+  
+  const noSeleccionados = disponibles.filter(a => !principales.find(p => p.id === a.id));
+  const shuffledReservas = [...noSeleccionados].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < state.numReservas && i < shuffledReservas.length; i++) {
+    reservasArr.push({ ...shuffledReservas[i], esReserva: true });
+  }
+  
+  state.seleccionados = principales;
+  state.reservas = reservasArr;
+  state.alumnos = state.alumnos.map(a => {
+    const isPrincipal = principales.find(p => p.id === a.id);
+    const isReserva = reservasArr.find(r => r.id === a.id);
+    if (isPrincipal) return { ...a, seleccionado: true, esReserva: false };
+    if (isReserva) return { ...a, seleccionado: false, esReserva: true };
+    return { ...a, seleccionado: false, esReserva: false };
+  });
+  render();
+}
+
+function ascendeReserva(reserva) {
+  const nuevosSeleccionados = [...state.seleccionados];
+  const ultimo = nuevosSeleccionados.pop();
+  if (ultimo) {
+    state.reservas = [...state.reservas, { ...ultimo, seleccionado: false, esReserva: true }];
+  }
+  nuevosSeleccionados.push({ ...reserva, seleccionado: true, esReserva: false });
+  state.seleccionados = nuevosSeleccionados;
+  state.reservas = state.reservas.filter(r => r.id !== reserva.id);
+  state.alumnos = state.alumnos.map(a => {
+    if (a.id === reserva.id) return { ...a, seleccionado: true, esReserva: false };
+    if (a.id === ultimo?.id) return { ...a, seleccionado: false, esReserva: true };
+    return a;
+  });
+  render();
+}
+
+function toggleEvitable(alumno) {
+  state.alumnos = state.alumnos.map(a => {
+    if (a.id === alumnoid) return { ...a, esEvitable: !a.esEvitable };
+    return a;
+  });
+  render();
+}
+
+function eliminarAlumno(alumno) {
+  state.alumnos = state.alumnos.filter(a => a.id !== alumnoid);
+  state.seleccionados = state.seleccionados.filter(a => a.id !== alumnoid);
+  state.reservas = state.reservas.filter(a => a.id !== alumnoid);
+  render();
+}
+
+function actualizarCampo(alumnoId, campo, valor) {
+  const actualizar = lista => lista.map(a => a.id === alumnoid ? { ...a, [campo]: valor } : a);
+  state.alumnos = actualizar(state.alumnos);
+  state.seleccionados = actualizar(state.seleccionados);
+  state.reservas = actualizar(state.reservas);
+  render();
+}
+
+function asignarCurso() {
+  const nombreMostrar = state.modalidadSeleccionada.charAt(0).toUpperCase() + state.modalidadSeleccionada.slice(1);
+  const actualizar = lista => lista.map(a => ({ ...a, curso: nombreMostrar }));
+  state.alumnos = actualizar(state.alumnos);
+  state.seleccionados = actualizar(state.seleccionados);
+  state.reservas = actualizar(state.reservas);
+  render();
+}
+
+function copiarNombres() {
+  let texto = 'ALUMNOS SELECCIONADOS:\n';
+  state.seleccionados.forEach((a, i) => {
+    const indicadores = [];
+    if (esNombreFemenino(a.nombre)) indicadores.push('♀');
+    if (a.edad) indicadores.push(a.edad + ' años');
+    if (a.curso) indicadores.push(a.curso);
+    texto += (i + 1) + '. ' + a.nombre + (indicadores.length ? ' (' + indicadores.join(', ') + ')' : '') + '\n';
+  });
+  if (state.reservas.length > 0) {
+    texto += '\nRESERVAS:\n';
+    state.reservas.forEach((a, i) => {
+      const indicadores = [];
+      if (esNombreFemenino(a.nombre)) indicadores.push('♀');
+      if (a.edad) indicadores.push(a.edad + ' años');
+      if (a.curso) indicadores.push(a.curso);
+      texto += (i + 1) + '. ' + a.nombre + (indicadores.length ? ' (' + indicadores.join(', ') + ')' : '') + '\n';
+    });
+  }
+  navigator.clipboard.writeText(texto);
+}
+
+function exportarCSV() {
+  let csv = 'Tipo,N°,Nombre,Edad,Estudios,Experiencia,Modalidad,Curso\n';
+  state.seleccionados.forEach((a, i) => {
+    csv += `Alumno,${i + 1},"${a.nombre}",${a.edad || ''},"${a.estudios || ''}","${a.experiencia || ''}","${a.modalidad || ''}","${a.curso || ''}"\n`;
+  });
+  state.reservas.forEach((a, i) => {
+    csv += `Reserva,${i + 1},"${a.nombre}",${a.edad || ''},"${a.estudios || ''}","${a.experiencia || ''}","${a.modalidad || ''}","${a.curso || ''}"\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'seleccion_alumnos_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+}
+
+function imprimir() {
+  const ventana = window.open('', '_blank');
+  if (!ventana) return;
+  let html = `<!DOCTYPE html><html><head><title>Selección de Alumnos</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 20px; }
+      h1 { color: #333; }
+      h2 { color: #666; border-bottom: 1px solid #ccc; margin-top: 20px; }
+      ul { list-style: none; padding: 0; }
+      li { padding: 8px 0; border-bottom: 1px solid #eee; }
+      .mujer { color: #9333ea; font-weight: bold; }
+    </style>
+  </head><body>
+    <h1>Alumnos Seleccionados</h1>
+    <ul>`;
+  state.seleccionados.forEach((a, i) => {
+    const clase = esNombreFemenino(a.nombre) ? 'mujer' : '';
+    const edad = a.edad ? ' (' + a.edad + ' años)' : '';
+    const curso = a.curso ? ' - ' + a.curso : '';
+    html += '<li class="' + clase + '">' + (i + 1) + '. ' + a.nombre + edad + curso + '</li>';
+  });
+  html += '</ul><h2>Reservas</h2><ul>';
+  state.reservas.forEach((a, i) => {
+    const clase = esNombreFemenino(a.nombre) ? 'mujer' : '';
+    const edad = a.edad ? ' (' + a.edad + ' años)' : '';
+    html += '<li class="' + clase + '">' + (i + 1) + '. ' + a.nombre + edad + '</li>';
+  });
+  html += '</ul></body></html>';
+  ventana.document.write(html);
+  ventana.print();
+}
+
+function getAlumnosPaginados() {
+  const filtrados = getAlumnosFiltrados();
+  const inicio = (state.paginaActual - 1) * porPagina;
+  return filtrados.slice(inicio, inicio + porPagina);
+}
+
+function getPaginasTotales() {
+  return Math.ceil(getAlumnosFiltrados().length / porPagina);
+}
+
+function renderTarjeta(alumno, esReserva, esBaseDatos) {
+  const colorModalidad = MODALIDADES_COLORES[state.modalidadSeleccionada] || MODALIDADES_COLORES['todos'];
+  const nombreId = 'nombre-' + alumnoid;
+  const estudiosId = 'estudios-' + alumnoid;
+  const experienciaId = 'experiencia-' + alumnoid;
+  const cursoId = 'curso-' + alumnoid;
+  
+  return `
+    <div class="${esReserva ? 'bg-gray-50 border-gray-300 opacity-70' : 'bg-white border-gray-200'} ${alumno.esEvitable ? 'ring-2 ring-red-500' : ''} p-3 rounded-lg border">
+      <div class="flex justify-between items-start mb-2">
+        <input type="text" value="${alumno.nombre.replace(/"/g, '&quot;')}" 
+          onchange="actualizarCampo('${alumno.id}', 'nombre', this.value)"
+          class="font-medium bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-blue-300 rounded px-1 flex-1" />
+        <div class="flex gap-1 ml-2">
+          ${esBaseDatos ? `
+            <button onclick="toggleEvitable('${alumno.id}')" class="p-1 rounded ${alumno.esEvitable ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-400'}" title="Evitable">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          ` : ''}
+          <button onclick="eliminarAlumno('${alumno.id}')" class="p-1 rounded bg-red-50 text-red-500 hover:bg-red-100" title="Eliminar">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+          </button>
+        </div>
+      </div>
+      <div class="text-xs space-y-1">
+        ${alumno.edad !== undefined ? `
+          <div class="flex items-center gap-1">
+            <span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-xs">${alumno.edad} años</span>
+          </div>
+        ` : ''}
+        ${esNombreFemenino(alumno.nombre) ? '<span class="text-purple-600 font-medium">♀</span>' : ''}
+        <input type="text" value="${(alumno.estudios || '').replace(/"/g, '&quot;')}" 
+          onchange="actualizarCampo('${alumno.id}', 'estudios', this.value)"
+          placeholder="Estudios..." 
+          class="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs" />
+        <input type="text" value="${(alumno.experiencia || '').replace(/"/g, '&quot;')}" 
+          onchange="actualizarCampo('${alumno.id}', 'experiencia', this.value)"
+          placeholder="Experiencia..." 
+          class="w-full bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs" />
+        ${esBaseDatos ? `
+          <div class="flex items-center gap-1">
+            <select onchange="actualizarCampo('${alumno.id}', 'curso', this.value)"
+              class="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs flex-1">
+              <option value="" ${!alumno.curso ? 'selected' : ''}>Sin curso</option>
+              <option value="Soldadura" ${alumno.curso === 'Soldadura' ? 'selected' : ''}>Soldadura</option>
+              <option value="Tubería" ${alumno.curso === 'Tubería' ? 'selected' : ''}>Tubería</option>
+              <option value="Montador" ${alumno.curso === 'Montador' ? 'selected' : ''}>Montador</option>
+            </select>
+            ${alumno.seleccionado ? '<span class="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-xs">ALUMNO</span>' : ''}
+            ${alumno.esReserva ? '<span class="bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded text-xs">RESERVA</span>' : ''}
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function render() {
+  const colorModalidad = MODALIDADES_COLORES[state.modalidadSeleccionada] || MODALIDADES_COLORES['todos'];
+  const tieneMujeres = getAlumnosFiltrados().some(a => esNombreFemenino(a.nombre));
+  const mujeresEnSeleccion = state.seleccionados.filter(a => esNombreFemenino(a.nombre)).length;
+  
+  let app = `
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold" style="color: ${colorModalidad}">Selección de Alumnos</h1>
+      <div class="flex gap-2">
+        <button onclick="state.pestana='seleccion'; render()" class="px-4 py-2 rounded-lg flex items-center gap-2 ${state.pestana === 'seleccion' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border'}">
+          <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          Selección
+        </button>
+        <button onclick="state.pestana='basedatos'; render()" class="px-4 py-2 rounded-lg flex items-center gap-2 ${state.pestana === 'basedatos' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border'}">
+          <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+          Base de Datos
+        </button>
+      </div>
+    </div>
+  `;
+
+  if (state.pestana === 'seleccion') {
+    if (!state.alumnos.length) {
+      app += `
+        <div class="bg-white rounded-xl p-8 text-center border-2 border-dashed border-gray-300">
+          <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+          <p class="text-gray-600 mb-4">Sube tu archivo Excel con los alumnos</p>
+          <label class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+            Subir Excel
+            <input type="file" accept=".xlsx,.xls,.csv" onchange="leerExcel(event)" class="hidden" />
+          </label>
+          <p class="text-xs text-gray-400 mt-4">El archivo se procesa en tu navegador. Los datos nunca salen de tu equipo.</p>
+        </div>
+      `;
+    } else {
+      app += `
+        <div class="bg-white rounded-xl p-4 border">
+          <div class="flex flex-wrap gap-4 items-center">
+            <div>
+              <label class="text-xs text-gray-500 block mb-1">Modalidad</label>
+              <select onchange="state.modalidadSeleccionada=this.value; render()" class="border rounded-lg px-3 py-2">
+                ${MODALIDADES.map(m => `<option value="${m}" ${state.modalidadSeleccionada === m ? 'selected' : ''}>${m.charAt(0).toUpperCase() + m.slice(1)}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 block mb-1">Alumnos</label>
+              <input type="number" value="${state.numPrincipales}" onchange="state.numPrincipales=Number(this.value); render()" class="border rounded-lg px-3 py-2 w-20" min="1" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 block mb-1">Reservas</label>
+              <input type="number" value="${state.numReservas}" onchange="state.numReservas=Number(this.value); render()" class="border rounded-lg px-3 py-2 w-20" min="0" />
+            </div>
+            <div class="flex-1">
+              <div class="text-sm text-gray-600">
+                <span class="font-medium">${getAlumnosFiltrados().length}</span> candidatos disponibles
+                ${tieneMujeres ? `<span class="ml-2 text-purple-600">• ${getAlumnosFiltrados().filter(a => esNombreFemenino(a.nombre)).length} mujeres</span>` : ''}
+                ${state.seleccionados.length > 0 ? `<span class="ml-2 text-amber-600">• ${mujeresEnSeleccion} mujeres en selección</span>` : ''}
+              </div>
+            </div>
+            <button onclick="seleccionarAleatorio()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              Generar Selección
+            </button>
+          </div>
+        </div>
+      `;
+      
+      if (state.seleccionados.length > 0) {
+        app += `
+          <div class="bg-white rounded-xl p-4 border mt-4">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-lg font-semibold">Alumnos Seleccionados (${state.seleccionados.length})</h2>
+              <div class="flex gap-2">
+                <button onclick="asignarCurso()" class="px-3 py-1.5 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                  Asignar curso
+                </button>
+                <button onclick="copiarNombres()" class="px-3 py-1.5 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                  Copiar
+                </button>
+                <button onclick="exportarCSV()" class="px-3 py-1.5 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                  CSV
+                </button>
+                <button onclick="imprimir()" class="px-3 py-1.5 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                  Imprimir
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+              ${state.seleccionados.map((alumno, idx) => `
+                <div class="relative">
+                  <span class="absolute -top-2 -left-2 bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">${idx + 1}</span>
+                  ${renderTarjeta(alumno, false, false)}
+                </div>
+              `).join('')}
+            </div>
+            ${state.reservas.length > 0 ? `
+              <h3 class="text-md font-semibold text-gray-500 mb-3 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                Reservas (${state.reservas.length})
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                ${state.reservas.map((alumno, idx) => `
+                  <div class="relative">
+                    <span class="absolute -top-2 -left-2 bg-gray-400 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">${idx + 1}</span>
+                    <button onclick="ascendeReserva('${alumno.id}')" class="absolute top-2 right-2 p-1 bg-green-100 text-green-600 rounded hover:bg-green-200" title="Ascender">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                    </button>
+                    ${renderTarjeta(alumno, true, false)}
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+    }
+  }
+
+  if (state.pestana === 'basedatos') {
+    app += `
+      <div class="space-y-4">
+        <div class="bg-white rounded-xl p-4 border">
+          <div class="flex gap-4 items-center">
+            <div class="flex-1">
+              <input type="text" placeholder="Buscar alumno..." value="${state.busqueda.replace(/"/g, '&quot;')}" oninput="state.busqueda=this.value; state.paginaActual=1; render()" class="w-full border rounded-lg px-4 py-2" />
+            </div>
+            <button onclick="state.mostrarFiltros=!state.mostrarFiltros; render()" class="px-4 py-2 rounded-lg flex items-center gap-2 ${state.mostrarFiltros ? 'bg-blue-600 text-white' : 'bg-gray-100'}">
+              <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+              Filtros
+            </button>
+          </div>
+          ${state.mostrarFiltros ? `
+            <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+              <div class="flex gap-4 items-center">
+                <span class="text-sm font-medium">Filtrar por modalidad:</span>
+                <select onchange="state.modalidadSeleccionada=this.value; render()" class="border rounded-lg px-3 py-1">
+                  ${MODALIDADES.map(m => `<option value="${m}" ${state.modalidadSeleccionada === m ? 'selected' : ''}>${m.charAt(0).toUpperCase() + m.slice(1)}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          ${getAlumnosPaginados().map(alumno => renderTarjeta(alumno, false, true)).join('')}
+        </div>
+
+        ${getPaginasTotales() > 1 ? `
+          <div class="flex justify-center items-center gap-4">
+            <button onclick="state.paginaActual=Math.max(1, state.paginaActual-1); render()" ${state.paginaActual === 1 ? 'disabled' : ''} class="px-4 py-2 bg-white border rounded-lg disabled:opacity-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <span class="text-sm">Página ${state.paginaActual} de ${getPaginasTotales()}</span>
+            <button onclick="state.paginaActual=Math.min(${getPaginasTotales()}, state.paginaActual+1); render()" ${state.paginaActual === getPaginasTotales() ? 'disabled' : ''} class="px-4 py-2 bg-white border rounded-lg disabled:opacity-50">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  document.getElementById('app').innerHTML = app;
+}
+
+// Fix the functions that have alumnoid bug
+function toggleEvitable(alumnoId) {
+  state.alumnos = state.alumnos.map(a => {
+    if (a.id === alumnoid) return { ...a, esEvitable: !a.esEvitable };
+    return a;
+  });
+  render();
+}
+
+function eliminarAlumno(alumnoId) {
+  state.alumnos = state.alumnos.filter(a => a.id !== alumnoid);
+  state.seleccionados = state.seleccionados.filter(a => a.id !== alumnoid);
+  state.reservas = state.reservas.filter(a => a.id !== alumnoid);
+  render();
+}
+
+function actualizarCampo(alumnoId, campo, valor) {
+  const actualizar = lista => lista.map(a => a.id === alumnoid ? { ...a, [campo]: valor } : a);
+  state.alumnos = actualizar(state.alumnos);
+  state.seleccionados = actualizar(state.seleccionados);
+  state.reservas = actualizar(state.reservas);
+  render();
+}
+
+// Initial render
+render();
+</script>
+</body>
+</html>
