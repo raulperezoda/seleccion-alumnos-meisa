@@ -367,10 +367,14 @@ function getAlumnosFiltrados() {
     );
   }
   if (state.modalidadSeleccionada !== 'todos') {
-    console.log('Filtrando por:', state.modalidadSeleccionada);
+    console.log('=== FILTRANDO POR:', state.modalidadSeleccionada, '===');
+    const antes = result.length;
     result = result.filter(a => {
       console.log('Alumno:', a.nombre, 'Modalidad:', a.modalidad);
-      if (!a.modalidad) return false;
+      if (!a.modalidad) {
+        console.log('Sin modalidad, excluded');
+        return false;
+      }
       const modLower = a.modalidad.toLowerCase();
       const filtro = state.modalidadSeleccionada;
       // Para tubería también incluir "tubero"
@@ -385,6 +389,7 @@ function getAlumnosFiltrados() {
       }
       return modLower.includes(filtro.substring(0, 3));
     });
+    console.log('Resultado:', antes, '->', result.length);
   }
   return result;
 }
