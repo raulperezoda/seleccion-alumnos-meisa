@@ -189,15 +189,41 @@ function detectarFilaCabeceras(json) {
 function leerExcel(e) {
   const file = e.target.files[0];
   if (!file) return;
-  console.log('Archivo seleccionado:', file.name);
+  console.log('Archivo seleccionado:', file.name, 'Tamaño:', file.size);
+  
+  // Verificar que XLSX está cargado
+  if (typeof XLSX === 'undefined') {
+    alert('Error: La librería XLSX no está cargada. Recarga la página.');
+    return;
+  }
+  
   const reader = new FileReader();
+  reader.onerror = function(err) {
+    console.error('Error leyendo archivo:', err);
+    alert('Error al leer el archivo');
+  };
   reader.onload = function(event) {
     try {
       console.log('Leyendo archivo...');
       const data = new Uint8Array(event.target.result);
+      console.log('Datos leídos, tamaño:', data.length);
+      
+      if (data.length < 100) {
+        alert('El archivo está vacío o corrupto');
+        return;
+      }
+      
       const workbook = XLSX.read(data, { type: 'array' });
       console.log('Workbook leído, hojas:', workbook.SheetNames);
+      
+      if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+        alert('El Excel no tiene hojas');
+        return;
+      }
+      
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      console.log('Sheet:', sheet);
+      
       const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
       console.log('Filas encontradas:', json.length);
       if (json.length < 2) {
@@ -209,7 +235,6 @@ function leerExcel(e) {
       const filaCabeceras = detectarFilaCabeceras(json);
       const headers = json[filaCabeceras].map(String);
       console.log('Cabeceras detectadas:', headers);
-      console.log('Primera fila de datos:', json[1]);
       
       if (headers.length === 0 || !headers[0]) {
         alert('El Excel no tiene cabeceras. Asegúrate de que la primera fila contiene los nombres de las columnas.');
@@ -217,13 +242,25 @@ function leerExcel(e) {
       }
       
       const nuevosAlumnos = [];
+      let filasProcesadas = 0;
       for (let i = filaCabeceras + 1; i < json.length; i++) {
         const row = json[i];
         console.log('Fila', i, ':', row);
         if (!row || row.length === 0) continue;
+        filasProcesadas++;
         const obj = {};
         headers.forEach((h, idx) => { obj[h] = row[idx]; });
-        const nombre = String(obj[headers[0]] || obj['Nombre'] || '').trim();
+        // Buscar nombre en cualquier columna
+        let nombre = '';
+        for (const key of Object.keys(obj)) {
+          const val = String(key).toLowerCase();
+          if (val.includes('nombre') || val.includes('name') || val === 'alumno') {
+            nombre = String(obj[key] || '').trim();
+            break;
+          }
+        }
+        // Si no se encontró por nombre de columna, usar primera columna
+        if (!nombre) nombre = String(obj[headers[0]] || '').trim();
         console.log('Nombre encontrado:', nombre);
         if (!nombre) continue;
         nuevosAlumnos.push({
@@ -244,7 +281,7 @@ function leerExcel(e) {
       state.reservas = [];
       state.paginaActual = 1;
       console.log('Alumnos cargados:', nuevosAlumnos.length);
-      alert('Excel cargado correctamente: ' + nuevosAlumnos.length + ' alumnos');
+      alert('Excel cargado: ' + nuevosAlumnos.length + ' alumnos encontrados\nCabeceras: ' + headers.join(', '));
       render();
     } catch (err) {
       console.error('Error leyendo Excel:', err);
