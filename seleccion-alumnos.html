@@ -120,17 +120,6 @@ function detectarFilaCabeceras(json) {
 }
 
 function tieneCurso(row, tipo) {
-  // Columnas 11, 12, 13 son CURSO 1, CURSO 2, CURSO 3 (índice 10, 11, 12 en array)
-  for (let col = 10; col <= 12; col++) {
-    const val = String(row[col] || '').toLowerCase();
-    if (tipo === 'soldador' && val.includes('soldador')) return true;
-    if (tipo === 'tubero' && (val.includes('tubero') || val.includes('tuber'))) return true;
-    if (tipo === 'montador' && val.includes('montador')) return true;
-  }
-  return false;
-}
-
-function tieneCurso(row, tipo) {
   if (!Array.isArray(row)) return false;
   for (let col = 10; col <= 12; col++) {
     const val = String(row[col] || '').toLowerCase();
