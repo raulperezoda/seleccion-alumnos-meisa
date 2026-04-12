@@ -300,33 +300,33 @@ function leerExcel(e) {
             console.log('Estudios encontrados:', estudios);
           }
           
-          // Buscar curso/modalidad - buscar múltiples opciones
-          const cursoKeywords = ['curso', 'modalidad', 'especialidad', 'formacion', 'formación'];
-          let cursoIdx = -1;
-          for (const kw of cursoKeywords) {
-            cursoIdx = headers.findIndex(h => String(h).toLowerCase().includes(kw));
-            if (cursoIdx !== -1) break;
-          }
-          console.log('Indice de curso:', cursoIdx, 'Headers:', headers);
-          if (cursoIdx !== -1) {
-            const cursoValor = row[cursoIdx];
-            const cursoVal = String(cursoValor || '').toLowerCase();
-            console.log('Valor del curso:', cursoVal);
-            
-            if (cursoVal.includes('sold')) {
-              modalidad = 'soldador';
-              curso = 'Soldador';
-            } else if (cursoVal.includes('tub') || cursoVal.includes('tubero')) {
-              modalidad = 'tubero';
-              curso = 'Tubero';
-            } else if (cursoVal.includes('mont')) {
-              modalidad = 'montador';
-              curso = 'Montador';
-            } else {
-              modalidad = cursoVal;
-              curso = cursoVal;
+          // Buscar curso/modalidad - buscar en columnas CURSO 1, CURSO 2, CURSO 3 (índices 10, 11, 12)
+          // Las columnas de curso están en los índices 10, 11, 12 según el Excel
+          let modalidad = '';
+          let curso = '';
+          
+          // Buscar en CURSO 1 (índice 10), CURSO 2 (índice 11), CURSO 3 (índice 12)
+          for (const colIdx of [10, 11, 12]) {
+            const cursoValor = row[colIdx];
+            if (cursoValor) {
+              const cursoVal = String(cursoValor).toLowerCase();
+              console.log('Valor en columna', colIdx, ':', cursoVal);
+              if (cursoVal.includes('sold')) {
+                modalidad = 'soldador';
+                curso = 'Soldador';
+                break;
+              } else if (cursoVal.includes('tub') || cursoVal.includes('tubero')) {
+                modalidad = 'tubero';
+                curso = 'Tubero';
+                break;
+              } else if (cursoVal.includes('mont')) {
+                modalidad = 'montador';
+                curso = 'Montador';
+                break;
+              }
             }
           }
+          console.log('Modalidad asignada:', modalidad, 'Curso:', curso);
         }
         
         nuevosAlumnos.push({
