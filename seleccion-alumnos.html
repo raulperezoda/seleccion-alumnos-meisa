@@ -244,6 +244,8 @@ function leerExcel(e) {
       const filaCabeceras = detectarFilaCabeceras(json);
       const headers = json[filaCabeceras].map(String);
       console.log('Cabeceras detectadas:', headers);
+      console.log('Primera fila de datos:', json[filaCabeceras + 1]);
+      console.log('Keys del objeto:', Object.keys(json[filaCabeceras + 1]));
       
       if (headers.length === 0 || !headers[0]) {
         alert('El Excel no tiene cabeceras. Asegúrate de que la primera fila contiene los nombres de las columnas.');
