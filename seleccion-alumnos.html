@@ -367,7 +367,9 @@ function getAlumnosFiltrados() {
     );
   }
   if (state.modalidadSeleccionada !== 'todos') {
+    console.log('Filtrando por:', state.modalidadSeleccionada);
     result = result.filter(a => {
+      console.log('Alumno:', a.nombre, 'Modalidad:', a.modalidad);
       if (!a.modalidad) return false;
       const modLower = a.modalidad.toLowerCase();
       const filtro = state.modalidadSeleccionada;
@@ -377,6 +379,9 @@ function getAlumnosFiltrados() {
       }
       if (filtro === 'soldador') {
         return modLower.includes('sold');
+      }
+      if (filtro === 'montador') {
+        return modLower.includes('mont');
       }
       return modLower.includes(filtro.substring(0, 3));
     });
