@@ -189,13 +189,24 @@ function leerExcel(e) {
       }
       const headers = json[0].map(String);
       console.log('Cabeceras:', headers);
+      console.log('Primera fila de datos:', json[1]);
+      
+      if (headers.length === 0 || !headers[0]) {
+        alert('El Excel no tiene cabeceras. Asegúrate de que la primera fila contiene los nombres de las columnas.');
+        return;
+      }
+      
+      const nuevosAlumnos = [];
+      for (let i = 1; i < json.length; i++) {
       const nuevosAlumnos = [];
       for (let i = 1; i < json.length; i++) {
         const row = json[i];
+        console.log('Fila', i, ':', row);
         if (!row || row.length === 0) continue;
         const obj = {};
         headers.forEach((h, idx) => { obj[h] = row[idx]; });
         const nombre = String(obj[headers[0]] || obj['Nombre'] || '').trim();
+        console.log('Nombre encontrado:', nombre);
         if (!nombre) continue;
         nuevosAlumnos.push({
           id: 'alum-' + i,
