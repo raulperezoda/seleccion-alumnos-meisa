@@ -118,13 +118,26 @@ function detectarFilaCabeceras(json) {
 
 function tieneCurso(row, tipo) {
   if (!Array.isArray(row)) return false;
+  // Columns 10, 11, 12 in the array = columns 11, 12, 13 in Excel
   for (let col = 10; col <= 12; col++) {
-    const val = String(row[col] || '').toLowerCase();
-    if (tipo === 'soldador' && val.includes('sold')) return true;
-    if (tipo === 'tubero' && (val.includes('tub') || val.includes('tubero'))) return true;
-    if (tipo === 'montador' && val.includes('mont')) return true;
+    const val = String(row[col] || '').toLowerCase().trim();
+    if (tipo === 'soldador' && val.includes('soldador')) return true;
+    if (tipo === 'tubero' && (val.includes('tubero') || val.includes('tuberia'))) return true;
+    if (tipo === 'montador' && val.includes('montador')) return true;
   }
   return false;
+}
+
+function getModalidades(row) {
+  if (!Array.isArray(row)) return [];
+  const mods = [];
+  for (let col = 10; col <= 12; col++) {
+    const val = String(row[col] || '').toLowerCase().trim();
+    if (val.includes('soldador') && !mods.includes('soldador')) mods.push('soldador');
+    if ((val.includes('tubero') || val.includes('tuberia')) && !mods.includes('tubero')) mods.push('tubero');
+    if (val.includes('montador') && !mods.includes('montador')) mods.push('montador');
+  }
+  return mods;
 }
 
 function leerExcel(e) {
@@ -174,11 +187,8 @@ function leerExcel(e) {
         // Los estudios están en índice 13
         const estudios = String(row[13] || '').trim();
         
-        // Determinar modalidad (buscar en las 3 columnas de curso)
-        let modalidad = '';
-        if (tieneCurso(row, 'soldador')) modalidad = 'soldador';
-        else if (tieneCurso(row, 'tubero')) modalidad = 'tubero';
-        else if (tieneCurso(row, 'montador')) modalidad = 'montador';
+        // Obtener todas las modalidades del alumno
+        const modalidades = getModalidades(row);
         
         nuevosAlumnos.push({
           id: 'alum-' + i,
@@ -186,8 +196,9 @@ function leerExcel(e) {
           edad,
           estudios,
           experiencia: '',
-          modalidad,
-          curso: modalidad,
+          modalidades: modalidades,  // Array de modalidades
+          modalidad: modalidades[0] || '',  // Primera modalidad
+          curso: modalidades.join(', '),
           seleccionado: false,
           esReserva: false,
           esEvitable: false
@@ -199,12 +210,12 @@ function leerExcel(e) {
       state.reservas = [];
       state.paginaActual = 1;
       
-      // Contar por modalidad
-      const soldador = nuevosAlumnos.filter(a => a.modalidad === 'soldador').length;
-      const tubero = nuevosAlumnos.filter(a => a.modalidad === 'tubero').length;
-      const montador = nuevosAlumnos.filter(a => a.modalidad === 'montador').length;
+      // Contar por modalidad usando el array de modalidades
+      const soldador = nuevosAlumnos.filter(a => a.modalidades && a.modalidades.includes('soldador')).length;
+      const tubero = nuevosAlumnos.filter(a => a.modalidades && a.modalidades.includes('tubero')).length;
+      const montador = nuevosAlumnos.filter(a => a.modalidades && a.modalidades.includes('montador')).length;
       
-      alert('Excel cargado: ' + nuevosAlumnos.length + ' alumnos\nSoldador: ' + soldador + '\nTubero: ' + tubero + '\nMontador: ' + montador);
+      alert('Excel cargado: ' + nuevosAlumnos.length + ' alumnos\n\nCon montador: ' + montador + '\nCon tubero: ' + tubero + '\nCon soldador: ' + soldador);
       render();
     } catch (err) {
       console.error('Error:', err);
@@ -228,7 +239,7 @@ function getAlumnosFiltrados() {
   // Filtrar por modalidad
   if (state.modalidadSeleccionada !== 'todos') {
     const filtro = state.modalidadSeleccionada;
-    result = result.filter(a => a.modalidad === filtro);
+    result = result.filter(a => a.modalidades && a.modalidades.includes(filtro));
   }
   
   return result;
