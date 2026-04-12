@@ -294,8 +294,13 @@ function leerExcel(e) {
             console.log('Estudios encontrados:', estudios);
           }
           
-          // Buscar curso/modalidad
-          const cursoIdx = headers.findIndex(h => String(h).toLowerCase().includes('curso'));
+          // Buscar curso/modalidad - buscar múltiples opciones
+          const cursoKeywords = ['curso', 'modalidad', 'especialidad', 'formacion', 'formación'];
+          let cursoIdx = -1;
+          for (const kw of cursoKeywords) {
+            cursoIdx = headers.findIndex(h => String(h).toLowerCase().includes(kw));
+            if (cursoIdx !== -1) break;
+          }
           console.log('Indice de curso:', cursoIdx);
           if (cursoIdx !== -1) {
             const cursoVal = String(row[cursoIdx] || '').toLowerCase();
