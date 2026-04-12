@@ -100,23 +100,20 @@ let state = {
 const porPagina = 50;
 
 function detectarFilaCabeceras(json) {
-  let maxCols = 0;
-  let mejorFila = 0;
-  for (let i = 0; i < Math.min(10, json.length); i++) {
+  // Las cabeceras siempre están en fila 2 (índice 1)
+  // Buscar la fila que tenga "NOMBRE" en la columna 2
+  for (let i = 0; i < Math.min(5, json.length); i++) {
     const row = json[i];
     if (!row) continue;
-    let cols = 0;
-    for (let j = 0; j < (row.length || 0); j++) {
-      if (row[j] !== undefined && row[j] !== null && String(row[j]).trim() !== '') {
-        cols++;
-      }
-    }
-    if (cols > maxCols) {
-      maxCols = cols;
-      mejorFila = i;
+    // La columna NOMBRE está en índice 1
+    const nombreCelda = String(row[1] || '').toLowerCase().trim();
+    if (nombreCelda === 'nombre') {
+      console.log('Cabeceras encontradas en fila:', i);
+      return i;
     }
   }
-  return mejorFila;
+  // Por defecto usar fila 1 (índice 1)
+  return 1;
 }
 
 function tieneCurso(row, tipo) {
