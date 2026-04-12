@@ -99,10 +99,10 @@ function esNombreFemenino(nombre) {
   return NOMBRES_FEMENINOS.has(primeroSinAcentos) || NOMBRES_FEMENINOS.has(primero);
 }
 
-const MODALIDADES = ['soldadura', 'tubería', 'montador', 'todos'];
+const MODALIDADES = ['soldadura', 'tuberia', 'montador', 'todos'];
 const MODALIDADES_COLORES = {
   'soldadura': '#f59e0b',
-  'tubería': '#3b82f6',
+  'tuberia': '#3b82f6',
   'montador': '#10b981',
   'todos': '#6366f1'
 };
@@ -244,88 +244,44 @@ function leerExcel(e) {
       const filaCabeceras = detectarFilaCabeceras(json);
       const headers = json[filaCabeceras].map(String);
       console.log('Cabeceras detectadas:', headers);
-      console.log('Primera fila de datos (objeto):', JSON.stringify(json[filaCabeceras + 1]));
       
-      if (headers.length === 0 || !headers[0]) {
-        alert('El Excel no tiene cabeceras. Asegúrate de que la primera fila contiene los nombres de las columnas.');
-        return;
-      }
-      
-      const nuevosAlumnos = [];
-      let filasProcesadas = 0;
-      for (let i = filaCabeceras + 1; i < json.length; i++) {
-        const row = json[i];
-        console.log('Fila', i, ':', row);
-        if (!row || row.length === 0) continue;
-        filasProcesadas++;
-        const obj = {};
-        headers.forEach((h, idx) => { obj[h] = row[idx]; });
-        // Las cabeceras y datos pueden estar en diferentes formatos
-      // Buscar la columna NOMBRE en las cabeceras
+      // Buscar índice de columna NOMBRE
       const nombreIdx = headers.findIndex(h => String(h).toLowerCase().includes('nombre'));
-      console.log('Índice de columna NOMBRE:', nombreIdx);
+      console.log('Indice de columna NOMBRE:', nombreIdx);
       
-      // Si no hay NOMBRE, buscar en las cabeceras cualquier cosa relacionada
       let nombreColumnaIdx = nombreIdx;
       if (nombreColumnaIdx === -1) {
-        // Usar la segunda columna como nombre (común en excel)
         nombreColumnaIdx = 1;
       }
       
       const nuevosAlumnos = [];
-      let filasProcesadas = 0;
+      
       for (let i = filaCabeceras + 1; i < json.length; i++) {
         const row = json[i];
         if (!row || (Array.isArray(row) && row.length === 0)) continue;
         
-        // El row puede ser array o objeto
         let nombre = '';
         if (Array.isArray(row)) {
-          // Es un array - usar índice de columna nombre
           nombre = String(row[nombreColumnaIdx] || '').trim();
-          console.log('Fila', i, 'nombre de array:', nombre);
-        } else {
-          // Es objeto - buscar key de nombre
-          for (const key of Object.keys(row)) {
-            if (String(key).toLowerCase().includes('nombre')) {
-              nombre = String(row[key] || '').trim();
-              break;
-            }
-          }
+          console.log('Fila', i, 'nombre:', nombre);
         }
         
         if (!nombre) continue;
         
-        // Extraer otros datos de la fila
         let edad, estudios, experiencia, modalidad, curso;
         if (Array.isArray(row)) {
-          // Buscar edad (índice 9 según el Excel visto)
           const edadIdx = headers.findIndex(h => String(h).toLowerCase().includes('edad'));
           if (edadIdx !== -1 && row[edadIdx]) {
             const edadVal = parseInt(row[edadIdx]);
             if (!isNaN(edadVal)) edad = edadVal;
           }
-          // Estudios (índice 13)
           const estudiosIdx = headers.findIndex(h => String(h).toLowerCase().includes('estudio'));
           if (estudiosIdx !== -1) estudios = String(row[estudiosIdx] || '');
-          // Modalidad (índice 11 o 12)
           const cursoIdx = headers.findIndex(h => String(h).toLowerCase().includes('curso'));
           if (cursoIdx !== -1) {
             const cursoVal = String(row[cursoIdx] || '').toLowerCase();
             if (cursoVal.includes('sold')) modalidad = 'soldadura';
-            else if (cursoVal.includes('tub')) modalidad = 'tubería';
-            else if (cursoVal.includes('mont')) modalidad = 'montador';
-            else modalidad = cursoVal;
-            curso = cursoVal;
-          }
-        } else {
-          edad = detectarEdad(row, headers);
-          estudios = String(row[Object.keys(row).find(k => k.toLowerCase().includes('estudio'))] || '');
-          const cursoKey = Object.keys(row).find(k => k.toLowerCase().includes('curso'));
-          if (cursoKey) {
-            const cursoVal = String(row[cursoKey] || '').toLowerCase();
-            if (cursoVal.includes('sold')) modalidad = 'soldadura';
-            else if (cursoVal.includes('tub')) modalidad = 'tubería';
+            else if (cursoVal.includes('tub')) modalidad = 'tuberia';
             else if (cursoVal.includes('mont')) modalidad = 'montador';
             else modalidad = cursoVal;
             curso = cursoVal;
@@ -451,7 +407,7 @@ function eliminarAlumno(alumnoId) {
 }
 
 function actualizarCampo(alumnoId, campo, valor) {
-  const actualizar = lista => lista.map(a => a.id === alumnoid ? { ...a, [campo]: valor } : a);
+  const actualizar = lista => lista.map(a => a.id === alumnoId ? { ...a, [campo]: valor } : a);
   state.alumnos = actualizar(state.alumnos);
   state.seleccionados = actualizar(state.seleccionados);
   state.reservas = actualizar(state.reservas);
