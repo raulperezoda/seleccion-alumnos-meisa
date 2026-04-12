@@ -172,15 +172,23 @@ function detectarModalidad(obj, headers) {
 function leerExcel(e) {
   const file = e.target.files[0];
   if (!file) return;
+  console.log('Archivo seleccionado:', file.name);
   const reader = new FileReader();
   reader.onload = function(event) {
     try {
+      console.log('Leyendo archivo...');
       const data = new Uint8Array(event.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
+      console.log('Workbook leído, hojas:', workbook.SheetNames);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-      if (json.length < 2) return;
+      console.log('Filas encontradas:', json.length);
+      if (json.length < 2) {
+        alert('El archivo está vacío o no tiene datos');
+        return;
+      }
       const headers = json[0].map(String);
+      console.log('Cabeceras:', headers);
       const nuevosAlumnos = [];
       for (let i = 1; i < json.length; i++) {
         const row = json[i];
@@ -206,6 +214,8 @@ function leerExcel(e) {
       state.seleccionados = [];
       state.reservas = [];
       state.paginaActual = 1;
+      console.log('Alumnos cargados:', nuevosAlumnos.length);
+      alert('Excel cargado correctamente: ' + nuevosAlumnos.length + ' alumnos');
       render();
     } catch (err) {
       console.error('Error leyendo Excel:', err);
