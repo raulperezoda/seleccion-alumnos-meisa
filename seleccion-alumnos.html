@@ -242,17 +242,24 @@ function leerExcel(e) {
       
       // Detectar fila de cabeceras
       const filaCabeceras = detectarFilaCabeceras(json);
-      const headers = json[filaCabeceras].map(String);
       console.log('Cabeceras detectadas:', headers);
       
       // Buscar índice de columna NOMBRE
       const nombreIdx = headers.findIndex(h => String(h).toLowerCase().includes('nombre'));
-      console.log('Indice de columna NOMBRE:', nombreIdx);
+      console.log('Indice de columna NOMBRE:', nombreIdx, 'Headers:', headers);
       
-      let nombreColumnaIdx = nombreIdx;
-      if (nombreColumnaIdx === -1) {
-        nombreColumnaIdx = 1;
-      }
+      let nombreColumnaIdx = nombreIdx !== -1 ? nombreIdx : 1;
+      
+      // Buscar índice de estudios (puede ser columna 14 en tu Excel)
+      const estudiosIdx = headers.findIndex(h => String(h).toLowerCase().includes('estudio'));
+      // Si no encuentra, usar índice 13 (columna 14)
+      const estudiosColumnaIdx = estudiosIdx !== -1 ? estudiosIdx : 13;
+      console.log('Indice de estudios:', estudiosIdx, '/ usando:', estudiosColumnaIdx);
+      
+      // Buscar índice de edad
+      const edadIdx = headers.findIndex(h => String(h).toLowerCase().includes('edad'));
+      const edadColumnaIdx = edadIdx !== -1 ? edadIdx : 9;
+      console.log('Indice de edad:', edadIdx, '/ usando:', edadColumnaIdx);
       
       const nuevosAlumnos = [];
       
@@ -270,19 +277,22 @@ function leerExcel(e) {
         
         let edad, estudios, experiencia, modalidad, curso;
         if (Array.isArray(row)) {
-          const edadIdx = headers.findIndex(h => String(h).toLowerCase().includes('edad'));
-          console.log('Indice de edad:', edadIdx);
-          if (edadIdx !== -1 && row[edadIdx]) {
-            const edadVal = parseInt(row[edadIdx]);
-            console.log('Valor edad:', row[edadIdx], 'Parse:', edadVal);
-            if (!isNaN(edadVal)) edad = edadVal;
+          // Usar los índices de columnas detectados (con fallback)
+          const edadColumna = row[edadColumnaIdx];
+          if (edadColumna) {
+            const edadVal = parseInt(edadColumna);
+            if (!isNaN(edadVal)) {
+              edad = edadVal;
+              console.log('Edad encontrada:', edad);
+            }
           }
-          const estudiosIdx = headers.findIndex(h => String(h).toLowerCase().includes('estudio'));
-          console.log('Indice de estudios:', estudiosIdx);
-          if (estudiosIdx !== -1) {
-            estudios = String(row[estudiosIdx] || '');
+          
+          const estudiosValor = row[estudiosColumnaIdx];
+          if (estudiosValor) {
+            estudios = String(estudiosValor);
             console.log('Estudios encontrados:', estudios);
           }
+          
           const cursoIdx = headers.findIndex(h => String(h).toLowerCase().includes('curso'));
           if (cursoIdx !== -1) {
             const cursoVal = String(row[cursoIdx] || '').toLowerCase();
