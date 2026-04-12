@@ -259,17 +259,17 @@ function leerExcel(e) {
         filasProcesadas++;
         const obj = {};
         headers.forEach((h, idx) => { obj[h] = row[idx]; });
-        // Buscar nombre en cualquier columna
+        // Buscar nombre en cualquier columna - buscar NOMBRE específicamente
         let nombre = '';
+        const nombreHeaders = ['nombre', 'name', 'alumno', 'estudiante', 'candidato'];
         for (const key of Object.keys(obj)) {
-          const val = String(key).toLowerCase();
-          if (val.includes('nombre') || val.includes('name') || val === 'alumno') {
+          const val = String(key).toLowerCase().trim();
+          if (nombreHeaders.some(h => val.includes(h))) {
             nombre = String(obj[key] || '').trim();
+            console.log('Nombre de columna:', key, '=', nombre);
             break;
           }
         }
-        // Si no se encontró por nombre de columna, usar primera columna
-        if (!nombre) nombre = String(obj[headers[0]] || '').trim();
         console.log('Nombre encontrado:', nombre);
         if (!nombre) continue;
         nuevosAlumnos.push({
@@ -375,18 +375,18 @@ function ascendeReserva(reserva) {
   render();
 }
 
-function toggleEvitable(alumno) {
+function toggleEvitable(alumnoId) {
   state.alumnos = state.alumnos.map(a => {
-    if (a.id === alumnoid) return { ...a, esEvitable: !a.esEvitable };
+    if (a.id === alumnoId) return { ...a, esEvitable: !a.esEvitable };
     return a;
   });
   render();
 }
 
-function eliminarAlumno(alumno) {
-  state.alumnos = state.alumnos.filter(a => a.id !== alumnoid);
-  state.seleccionados = state.seleccionados.filter(a => a.id !== alumnoid);
-  state.reservas = state.reservas.filter(a => a.id !== alumnoid);
+function eliminarAlumno(alumnoId) {
+  state.alumnos = state.alumnos.filter(a => a.id !== alumnoId);
+  state.seleccionados = state.seleccionados.filter(a => a.id !== alumnoId);
+  state.reservas = state.reservas.filter(a => a.id !== alumnoId);
   render();
 }
 
@@ -489,10 +489,6 @@ function getPaginasTotales() {
 
 function renderTarjeta(alumno, esReserva, esBaseDatos) {
   const colorModalidad = MODALIDADES_COLORES[state.modalidadSeleccionada] || MODALIDADES_COLORES['todos'];
-  const nombreId = 'nombre-' + alumnoid;
-  const estudiosId = 'estudios-' + alumnoid;
-  const experienciaId = 'experiencia-' + alumnoid;
-  const cursoId = 'curso-' + alumnoid;
   
   return `
     <div class="${esReserva ? 'bg-gray-50 border-gray-300 opacity-70' : 'bg-white border-gray-200'} ${alumno.esEvitable ? 'ring-2 ring-red-500' : ''} p-3 rounded-lg border">
@@ -712,30 +708,6 @@ function render() {
   }
 
   document.getElementById('app').innerHTML = app;
-}
-
-// Fix the functions that have alumnoid bug
-function toggleEvitable(alumnoId) {
-  state.alumnos = state.alumnos.map(a => {
-    if (a.id === alumnoid) return { ...a, esEvitable: !a.esEvitable };
-    return a;
-  });
-  render();
-}
-
-function eliminarAlumno(alumnoId) {
-  state.alumnos = state.alumnos.filter(a => a.id !== alumnoid);
-  state.seleccionados = state.seleccionados.filter(a => a.id !== alumnoid);
-  state.reservas = state.reservas.filter(a => a.id !== alumnoid);
-  render();
-}
-
-function actualizarCampo(alumnoId, campo, valor) {
-  const actualizar = lista => lista.map(a => a.id === alumnoid ? { ...a, [campo]: valor } : a);
-  state.alumnos = actualizar(state.alumnos);
-  state.seleccionados = actualizar(state.seleccionados);
-  state.reservas = actualizar(state.reservas);
-  render();
 }
 
 // Initial render
