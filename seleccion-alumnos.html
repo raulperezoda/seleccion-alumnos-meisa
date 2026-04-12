@@ -260,27 +260,86 @@ function leerExcel(e) {
         filasProcesadas++;
         const obj = {};
         headers.forEach((h, idx) => { obj[h] = row[idx]; });
-        // Buscar nombre en cualquier columna - buscar NOMBRE específicamente
+        // Las cabeceras y datos pueden estar en diferentes formatos
+      // Buscar la columna NOMBRE en las cabeceras
+      const nombreIdx = headers.findIndex(h => String(h).toLowerCase().includes('nombre'));
+      console.log('Índice de columna NOMBRE:', nombreIdx);
+      
+      // Si no hay NOMBRE, buscar en las cabeceras cualquier cosa relacionada
+      let nombreColumnaIdx = nombreIdx;
+      if (nombreColumnaIdx === -1) {
+        // Usar la segunda columna como nombre (común en excel)
+        nombreColumnaIdx = 1;
+      }
+      
+      const nuevosAlumnos = [];
+      let filasProcesadas = 0;
+      for (let i = filaCabeceras + 1; i < json.length; i++) {
+        const row = json[i];
+        if (!row || (Array.isArray(row) && row.length === 0)) continue;
+        
+        // El row puede ser array o objeto
         let nombre = '';
-        const nombreHeaders = ['nombre', 'name', 'alumno', 'estudiante', 'candidato'];
-        for (const key of Object.keys(obj)) {
-          const val = String(key).toLowerCase().trim();
-          if (nombreHeaders.some(h => val.includes(h))) {
-            nombre = String(obj[key] || '').trim();
-            console.log('Nombre de columna:', key, '=', nombre);
-            break;
+        if (Array.isArray(row)) {
+          // Es un array - usar índice de columna nombre
+          nombre = String(row[nombreColumnaIdx] || '').trim();
+          console.log('Fila', i, 'nombre de array:', nombre);
+        } else {
+          // Es objeto - buscar key de nombre
+          for (const key of Object.keys(row)) {
+            if (String(key).toLowerCase().includes('nombre')) {
+              nombre = String(row[key] || '').trim();
+              break;
+            }
           }
         }
-        console.log('Nombre encontrado:', nombre);
+        
         if (!nombre) continue;
+        
+        // Extraer otros datos de la fila
+        let edad, estudios, experiencia, modalidad, curso;
+        if (Array.isArray(row)) {
+          // Buscar edad (índice 9 según el Excel visto)
+          const edadIdx = headers.findIndex(h => String(h).toLowerCase().includes('edad'));
+          if (edadIdx !== -1 && row[edadIdx]) {
+            const edadVal = parseInt(row[edadIdx]);
+            if (!isNaN(edadVal)) edad = edadVal;
+          }
+          // Estudios (índice 13)
+          const estudiosIdx = headers.findIndex(h => String(h).toLowerCase().includes('estudio'));
+          if (estudiosIdx !== -1) estudios = String(row[estudiosIdx] || '');
+          // Modalidad (índice 11 o 12)
+          const cursoIdx = headers.findIndex(h => String(h).toLowerCase().includes('curso'));
+          if (cursoIdx !== -1) {
+            const cursoVal = String(row[cursoIdx] || '').toLowerCase();
+            if (cursoVal.includes('sold')) modalidad = 'soldadura';
+            else if (cursoVal.includes('tub')) modalidad = 'tubería';
+            else if (cursoVal.includes('mont')) modalidad = 'montador';
+            else modalidad = cursoVal;
+            curso = cursoVal;
+          }
+        } else {
+          edad = detectarEdad(row, headers);
+          estudios = String(row[Object.keys(row).find(k => k.toLowerCase().includes('estudio'))] || '');
+          const cursoKey = Object.keys(row).find(k => k.toLowerCase().includes('curso'));
+          if (cursoKey) {
+            const cursoVal = String(row[cursoKey] || '').toLowerCase();
+            if (cursoVal.includes('sold')) modalidad = 'soldadura';
+            else if (cursoVal.includes('tub')) modalidad = 'tubería';
+            else if (cursoVal.includes('mont')) modalidad = 'montador';
+            else modalidad = cursoVal;
+            curso = cursoVal;
+          }
+        }
+        
         nuevosAlumnos.push({
           id: 'alum-' + i,
           nombre,
-          edad: detectarEdad(obj, headers),
-          estudios: String(obj[headers.find(h => h.toLowerCase().includes('estudio'))] || ''),
-          experiencia: String(obj[headers.find(h => h.toLowerCase().includes('experiencia'))] || ''),
-          modalidad: detectarModalidad(obj, headers),
-          curso: String(obj[headers.find(h => h.toLowerCase().includes('curso'))] || ''),
+          edad,
+          estudios,
+          experiencia,
+          modalidad,
+          curso,
           seleccionado: false,
           esReserva: false,
           esEvitable: false
