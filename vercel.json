@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "src": "seleccion-alumnos.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/seleccion-alumnos.html"
+    }
+  ]
+}
