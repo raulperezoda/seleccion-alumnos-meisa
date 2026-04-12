@@ -170,14 +170,24 @@ function leerExcel(e) {
       // Col 14 (idx 13): ESTUDIOS
       
       const nuevosAlumnos = [];
+      let saltados = 0;
       
       for (let i = filaCabeceras + 1; i < json.length; i++) {
         const row = json[i];
-        if (!row || row.length === 0) continue;
+        
+        // Debug: mostrar cada fila
+        if (!row || row.length === 0) {
+          saltados++;
+          continue;
+        }
         
         // El nombre está en índice 1
         const nombre = String(row[1] || '').trim();
-        if (!nombre) continue;
+        if (!nombre) {
+          saltados++;
+          console.log('Fila', i, 'sin nombre');
+          continue;
+        }
         
         // La edad está en índice 9
         let edad;
@@ -205,6 +215,11 @@ function leerExcel(e) {
         });
       }
       
+      console.log('Total filas en JSON:', json.length);
+      console.log('Fila cabeceras:', filaCabeceras);
+      console.log('Filas a procesar:', json.length - filaCabeceras - 1);
+      console.log('Filas saltadas (vacias/sin nombre):', saltados);
+      
       state.alumnos = nuevosAlumnos;
       state.seleccionados = [];
       state.reservas = [];
@@ -215,7 +230,7 @@ function leerExcel(e) {
       const tubero = nuevosAlumnos.filter(a => a.modalidades && a.modalidades.includes('tubero')).length;
       const montador = nuevosAlumnos.filter(a => a.modalidades && a.modalidades.includes('montador')).length;
       
-      alert('Excel cargado: ' + nuevosAlumnos.length + ' alumnos\n\nCon montador: ' + montador + '\nCon tubero: ' + tubero + '\nCon soldador: ' + soldador);
+      alert('Excel cargado: ' + nuevosAlumnos.length + ' alumnos\n\nCon montador: ' + montador + '\nCon tubero: ' + tubero + '\nCon soldador: ' + soldador + '\n\nFilas procesadas: ' + (json.length - filaCabeceras - 1) + '\nSaltadas: ' + saltados);
       render();
     } catch (err) {
       console.error('Error:', err);
@@ -247,6 +262,8 @@ function getAlumnosFiltrados() {
 
 function seleccionarAleatorio() {
   const disponibles = getAlumnosFiltrados().filter(a => !a.seleccionado && !a.esEvitable);
+  console.log('Disponibles:', disponibles.length, 'Principales:', state.numPrincipales, 'Reservas:', state.numReservas);
+  
   if (disponibles.length === 0) {
     alert('No hay candidatos disponibles');
     return;
@@ -256,21 +273,27 @@ function seleccionarAleatorio() {
   
   // Garantizar al menos una mujer si hay
   const mujeres = disponibles.filter(a => esNombreFemenino(a.nombre));
+  console.log('Mujeres disponibles:', mujeres.length);
   const principales = [];
   
   if (mujeres.length > 0 && state.numPrincipales > 1) {
     const mujerElegida = mujeres[Math.floor(Math.random() * mujeres.length)];
     principales.push({ ...mujerElegida, seleccionado: true });
+    console.log('Mujer seleccionada:', mujerElegida.nombre);
     const restantes = disponibles.filter(a => a.id !== mujerElegida.id);
     const resto = [...restantes].sort(() => Math.random() - 0.5);
+    console.log('Restantes:', restantes.length, 'Selecting:', state.numPrincipales - 1);
     for (let i = 0; i < state.numPrincipales - 1 && i < resto.length; i++) {
       principales.push({ ...resto[i], seleccionado: true });
     }
   } else {
+    console.log('Selecting normally:', state.numPrincipales);
     for (let i = 0; i < state.numPrincipales && i < shuffled.length; i++) {
       principales.push({ ...shuffled[i], seleccionado: true });
     }
   }
+  
+  console.log('Principales seleccionados:', principales.length);
   
   const noSeleccionados = disponibles.filter(a => !principales.find(p => p.id === a.id));
   const shuffledReservas = [...noSeleccionados].sort(() => Math.random() - 0.5);
