@@ -293,11 +293,10 @@ function leerExcel(e) {
             console.log('Estudios encontrados:', estudios);
           }
           
-          const cursoIdx = headers.findIndex(h => String(h).toLowerCase().includes('curso'));
           if (cursoIdx !== -1) {
             const cursoVal = String(row[cursoIdx] || '').toLowerCase();
-            if (cursoVal.includes('sold')) modalidad = 'soldadura';
-            else if (cursoVal.includes('tub')) modalidad = 'tuberia';
+            if (cursoVal.includes('sold') || cursoVal.includes('soldador')) modalidad = 'soldadura';
+            else if (cursoVal.includes('tub') || cursoVal.includes('tubero')) modalidad = 'tuberia';
             else if (cursoVal.includes('mont')) modalidad = 'montador';
             else modalidad = cursoVal;
             curso = cursoVal;
@@ -344,7 +343,13 @@ function getAlumnosFiltrados() {
   if (state.modalidadSeleccionada !== 'todos') {
     result = result.filter(a => {
       if (!a.modalidad) return false;
-      return a.modalidad.toLowerCase().includes(state.modalidadSeleccionada.substring(0, 3));
+      const modLower = a.modalidad.toLowerCase();
+      const filtro = state.modalidadSeleccionada;
+      // Para tubería también incluir "tubero"
+      if (filtro === 'tuberia') {
+        return modLower.includes('tub') || modLower.includes('tubero');
+      }
+      return modLower.includes(filtro.substring(0, 3));
     });
   }
   return result;
