@@ -217,7 +217,7 @@ function getAlumnosFiltrados() {
   
   if (state.modalidadSeleccionada !== 'todos') {
     const filtro = state.modalidadSeleccionada;
-    result = result.filter(a => a.modalidades && a.modalidades.includes(filtro));
+    result = result.filter(a => a.modalidades && a.modalidades.includes(filtro) && a.modalidades.length === 1);
   }
   
   return result;
@@ -356,7 +356,7 @@ function renderTarjeta(alumno, esReserva, esBaseDatos) {
         ${alumno.edad !== undefined ? `<span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-xs">${alumno.edad} años</span>` : ''}
         ${esNombreFemenino(alumno.nombre) ? '<span class="text-purple-600 font-medium">M</span>' : ''}
         ${alumno.modalidades && alumno.modalidades.length > 0 ? `<span class="bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded text-xs">${alumno.modalidades.join(', ')}</span>` : ''}
-        <div class="text-xs text-gray-600 bg-gray-50 rounded px-2 py-1 break-words" style="min-height: 120px;">${(alumno.estudios || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+        <div class="text-xs text-gray-600 bg-gray-50 rounded px-2 py-1 break-words" style="min-height: 250px; max-height: 600px; overflow-y: auto;">${(alumno.estudios || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
         ${esBaseDatos ? `
           <input type="text" value="${(alumno.estudios || '').replace(/"/g, '&quot;')}" 
             onchange="actualizarCampo('${alumno.id}', 'estudios', this.value)"
@@ -446,7 +446,7 @@ function render() {
                 <button onclick="exportarCSV()" class="px-3 py-1.5 text-sm bg-gray-100 rounded-lg">CSV</button>
               </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6" style="grid-auto-rows: minmax(150px, auto);">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6" style="grid-auto-rows: minmax(300px, auto);">
               ${state.seleccionados.map((alumno, idx) => `
                 <div class="relative">
                   <span class="absolute -top-2 -left-2 bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">${idx + 1}</span>
@@ -456,7 +456,7 @@ function render() {
             </div>
             ${state.reservas.length > 0 ? `
               <h3 class="text-md font-semibold text-gray-500 mb-3">Reservas (${state.reservas.length})</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="grid-auto-rows: minmax(150px, auto);">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4" style="grid-auto-rows: minmax(300px, auto);">
                 ${state.reservas.map((alumno, idx) => `
                   <div class="relative">
                     <span class="absolute -top-2 -left-2 bg-gray-400 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">${idx + 1}</span>
