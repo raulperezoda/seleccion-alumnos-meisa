@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organizador Cursos — MEISA Formación Los Barrios</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--pri:#1a3a5c;--sec:#2471a3;--acc:#c0392b;--ok:#1e8449;--warn:#d4800a;--bg:#eef2f7;--card:#fff;--txt:#1c2833;--mut:#717d7e;--green:#a9dfbf;--red:#f5b7b1;--grey:#d5d8dc;--blue:#d6eaf8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(--txt)}
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+header{background:var(--pri);color:#fff;padding:10px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+header h1{font-size:14px;font-weight:bold}
+header small{font-size:10px;color:#aed6f1;margin-left:auto}
+.tabs{display:flex;background:#142d47;flex-shrink:0;overflow-x:auto}
+.tab{padding:9px 16px;color:rgba(255,255,255,.6);cursor:pointer;font-size:12px;white-space:nowrap;border:none;background:none;border-bottom:3px solid transparent;transition:.15s}
+.tab:hover{color:#fff;background:rgba(255,255,255,.07)}
+.tab.active{color:#fff;border-bottom:3px solid #5dade2;font-weight:bold}
+.panels{flex:1;overflow:hidden;display:flex}
+.panel{display:none;flex:1;overflow:auto;padding:10px;gap:8px;flex-direction:column}
+.panel.active{display:flex}
+.card{background:var(--card);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:13px}
+.card-title{font-weight:bold;color:var(--pri);font-size:13px;margin-bottom:9px}
+.btn{padding:6px 13px;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:bold;transition:.15s;display:inline-flex;align-items:center;gap:4px}
+.btn-pri{background:var(--pri);color:#fff}.btn-sec{background:var(--sec);color:#fff}
+.btn-ok{background:var(--ok);color:#fff}.btn-red{background:var(--acc);color:#fff}
+.btn-warn{background:var(--warn);color:#fff}.btn-pur{background:#7d3c98;color:#fff}
+.btn-grey{background:#7f8c8d;color:#fff}.btn:hover{opacity:.87}
+.btn-sm{padding:4px 9px;font-size:11px}
+label{display:block;font-size:11px;color:var(--mut);margin-bottom:2px;font-weight:bold;text-transform:uppercase;letter-spacing:.3px;margin-top:8px}
+label:first-child{margin-top:0}
+input,select,textarea{width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:5px;font-size:12px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--sec)}
+.row{display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap}
+.row>*{flex:1;min-width:80px}
+table.data{width:100%;border-collapse:collapse;font-size:12px}
+table.data th{background:var(--pri);color:#fff;padding:7px 9px;text-align:left}
+table.data td{padding:6px 9px;border-bottom:1px solid #eaeff5}
+table.data tr:hover td{background:#f4f8ff}
+table.data tr.sel td{background:#ddeeff}
+.calendarios{display:flex;flex-wrap:wrap;gap:9px}
+.mes{border:1px solid #c8d8e8;border-radius:8px;overflow:hidden;min-width:260px;box-shadow:0 1px 5px rgba(0,0,0,.08)}
+.mes-titulo{background:var(--pri);color:#fff;text-align:center;padding:6px 5px;font-weight:bold;font-size:12px;letter-spacing:.3px}
+.mes table{width:100%;border-collapse:collapse}
+.mes th{background:var(--blue);color:var(--pri);text-align:center;padding:5px 2px;font-size:11px;font-weight:bold}
+.mes td{text-align:center;padding:3px 2px;font-size:10px;border:1px solid #e8eef4;vertical-align:top;min-height:44px;width:14.28%}
+.mes td.finde{background:#f0f3f7;color:var(--mut)}
+.mes td.fest{background:#fde8e8;color:#922b21}
+.mes td.vacio{background:#fafafa;border:none}
+.mes td.hoy{outline:2px solid #e67e22;outline-offset:-2px;background:#fffbf2}
+.pill{display:block;border-radius:4px;font-size:9px;font-weight:bold;padding:2px 4px;margin:1px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default;line-height:1.3}
+.leyenda{display:flex;gap:12px;flex-wrap:wrap;padding:6px 0;font-size:11px;color:var(--mut)}
+.leyenda span{display:flex;align-items:center;gap:5px}
+.cuad{width:12px;height:12px;border-radius:2px;display:inline-block;border:1px solid rgba(0,0,0,.12)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:10px;padding:20px;min-width:340px;max-width:500px;width:92%;box-shadow:0 8px 32px rgba(0,0,0,.28);max-height:90vh;overflow-y:auto}
+.modal h2{font-size:14px;color:var(--pri);margin-bottom:13px;font-weight:bold}
+.mfooter{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.alert{padding:7px 11px;border-radius:5px;font-size:12px;margin-bottom:6px}
+.alert-ok{background:#d5f5e3;color:#145a32;border:1px solid var(--green)}
+.alert-err{background:#fde8e8;color:#922b21;border:1px solid var(--red)}
+.info{background:#eaf4fb;border:1px solid #aed6f1;border-radius:5px;padding:7px 11px;font-size:11px;color:var(--sec)}
+.prog-row{display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;border:2px solid #e0e0e0;margin-bottom:5px;background:#fdfdfd}
+.prog-row .dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:2px solid rgba(0,0,0,.15)}
+.prog-row .txt{flex:1;font-size:11px;line-height:1.4}
+.scroll{overflow:auto;flex:1}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:bold}
+@media (max-width:768px){
+#app{height:auto;min-height:100vh;overflow:auto}
+header{padding:8px 12px;flex-wrap:wrap}
+header h1{font-size:12px}
+header small{display:none}
+.tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{padding:8px 12px;font-size:11px}
+.panels{flex-direction:column;overflow:visible}
+.panel{padding:8px;overflow:visible}
+.card{padding:10px}
+.modal{min-width:95%;width:95%;padding:15px}
+.calendarios{overflow-x:auto;flex-wrap:nowrap;padding-bottom:10px;-webkit-overflow-scrolling:touch}
+.mes{min-width:280px;flex-shrink:0}
+.prog-row{flex-wrap:wrap}
+.prog-row .txt{width:calc(100% - 30px)}
+.row{flex-direction:column}
+.row>*{min-width:100%}
+table.data{font-size:11px}
+table.data th,table.data td{padding:5px 6px}
+.btn-sm{width:100%;margin-bottom:4px}
+}
+@media (max-width:480px){
+header h1{font-size:11px}
+.tab{padding:6px 10px;font-size:10px}
+.card-title{font-size:12px}
+.btn{width:100%;margin-bottom:5px}
+.scroll{max-height:250px}
+.mes{min-width:260px}
+.mes td{font-size:8px;padding:1px}
+.mes th{font-size:9px;padding:3px 1px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+<h1>Organizador de Cursos — MEISA Formación Los Barrios (Cádiz)</h1>
+<small>Festivos: nacionales + Andalucía + Cádiz capital</small>
+</header>
+<div class="tabs">
+<button class="tab active" onclick="showTab('org')">Organigrama</button>
+<button class="tab" onclick="showTab('cursos')">Cursos</button>
+<button class="tab" onclick="showTab('teoricas')">Clases Teóricas</button>
+<button class="tab" onclick="showTab('prl')">PRL</button>
+<button class="tab" onclick="showTab('gantt')">Gantt</button>
+<button class="tab" onclick="showTab('festivos')">Festivos</button>
+<button class="tab" onclick="showTab('docentes')">Docentes</button>
+</div>
+<div class="panels">
+
+<!-- ORGANIGRAMA -->
+<div id="tab-org" class="panel active">
+<div style="display:flex;gap:9px;flex:1;overflow:hidden;min-height:0">
+<div style="width:290px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;overflow-y:auto">
+<div class="card">
+<div class="card-title">Entidad Financiadora</div>
+<label>Tipo de entidad</label>
+<select id="ent-tipo" onchange="cambiarEntidad()">
+<option value="">— Sin especificar —</option>
+<option value="Ayuntamiento">Ayuntamiento</option>
+<option value="Cámara de Comercio">Cámara de Comercio</option>
+<option value="Junta de Andalucía">Junta de Andalucía</option>
+<option value="otro">Otro...</option>
+</select>
+<div id="ent-otro-wrap" style="display:none">
+<label>Especificar entidad</label>
+<input type="text" id="ent-otro" placeholder="Nombre de la entidad..." oninput="guardarEntidad()">
+</div>
+<div id="ent-display" style="margin-top:6px;font-size:11px;font-weight:bold;color:var(--ok);display:none"></div>
+</div>
+<div class="card">
+<div class="card-title">Cursos programados</div>
+<div id="lista-prog"><p style="color:var(--mut);font-size:11px;text-align:center;padding:8px">Sin cursos añadidos</p></div>
+<button class="btn btn-ok" style="width:100%;margin-top:7px" onclick="abrirModalProg()">+ Añadir curso / turno</button>
+</div>
+<div class="card">
+<button class="btn btn-pri" style="width:100%;padding:9px;margin-bottom:6px" onclick="generarOrganigrama()">GENERAR ORGANIGRAMA</button>
+<button id="btn-html" class="btn btn-sec" style="width:100%;margin-bottom:5px" disabled onclick="exportarHTML()">Exportar HTML / PDF</button>
+<button id="btn-excel" class="btn" style="width:100%;background:#217346;color:#fff" disabled onclick="exportarExcel()">Exportar Excel completo</button>
+</div>
+<div class="card" id="resumen-org" style="display:none">
+<div class="card-title">Resumen</div>
+<div id="fichas-resumen"></div>
+</div>
+</div>
+<div class="card scroll" style="flex:1;min-width:0">
+<div id="cal-org" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--mut);font-size:13px">
+Añade cursos a la izquierda y pulsa "Generar Organigrama"
+</div>
+</div>
+</div>
+</div>
+
+<!-- CURSOS -->
+<div id="tab-cursos" class="panel">
+<div class="card" style="flex:1;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+<div id="alert-cursos"></div>
+<button class="btn btn-pri btn-sm" onclick="nuevoCurso()">+ Nuevo curso</button>
+</div>
+<table class="data">
+<thead><tr><th>Código</th><th>Nombre</th><th>Área</th><th>H.Totales</th><th>H/Día</th><th>Tipo</th><th>Entidad</th></tr></thead>
+<tbody id="tbody-cursos"></tbody>
+</table>
+</div>
+<div class="card">
+<div class="card-title">Importar / Exportar</div>
+<div class="row">
+<div><button class="btn btn-sec" onclick="descargarPlantilla()">Descargar plantilla CSV</button></div>
+<div><input type="file" id="file-import" accept=".csv" style="display:none" onchange="importarCSV(this)"><button class="btn btn-grey" onclick="G('file-import').click()">Importar CSV</button></div>
+</div>
+</div>
+</div>
+
+<!-- CLASES TEÓRICAS -->
+<div id="tab-teoricas" class="panel">
+<div style="display:flex;gap:9px;flex:1;overflow:hidden;min-height:0">
+<div class="card" style="width:320px;flex-shrink:0">
+<div class="card-title">Clases Teóricas</div>
+<div class="row">
+<div><label>Fecha</label><input type="date" id="t-fecha"></div>
+<div><label>Horas</label><input type="number" id="t-horas" value="2" min="1" step="0.5"></div>
+</div>
+<label>Curso</label>
+<select id="t-curso"><option value="">— General / Todos —</option></select>
+<label>Docente</label>
+<select id="t-docente" onchange="handleCustomDoc(this,'t-docente-custom')">
+<option value="">— No asignado —</option>
+<option value="__custom__">Otro (escribir)...</option>
+</select>
+<input type="text" id="t-docente-custom" data-custom="1" placeholder="Nombre del docente..." style="display:none;margin-top:4px">
+<label>Descripción</label>
+<textarea id="t-desc" rows="2" placeholder="Tema de la clase..."></textarea>
+<div class="row" style="margin-top:8px">
+<button class="btn btn-pri" onclick="anadirTeorica()">Añadir</button>
+<button class="btn btn-red" onclick="eliminarTeoricaSel()">Eliminar</button>
+</div>
+<div id="t-total" style="margin-top:8px;font-size:11px;color:var(--mut)"></div>
+</div>
+<div class="card scroll" style="flex:1;padding:10px">
+<table class="data">
+<thead><tr><th>Fecha</th><th>Día</th><th>Curso</th><th>Docente</th><th>Descripción</th><th>Horas</th><th></th></tr></thead>
+<tbody id="tbody-teoricas"></tbody>
+</table>
+<div id="cal-teorica" style="margin-top:15px"></div>
+</div>
+</div>
+</div>
+
+<!-- PRL -->
+<div id="tab-prl" class="panel">
+<div style="display:flex;gap:9px;flex:1;overflow:hidden;min-height:0">
+<div class="card" style="width:320px;flex-shrink:0">
+<div class="card-title">Sesiones PRL</div>
+<div class="row">
+<div><label>Fecha</label><input type="date" id="prl-fecha"></div>
+<div><label>Horas</label><input type="number" id="prl-horas" value="2" min="1" step="0.5"></div>
+</div>
+<label>Módulo PRL</label>
+<select id="prl-modulo" onchange="if(this.value==='otro')G('prl-desc').style.display='';else G('prl-desc').style.display='none'">
+<option value="">— Seleccionar módulo —</option>
+<option value="Intro PRL">Intro PRL (6h)</option>
+<option value="Primeros auxilios">Primeros auxilios (6h)</option>
+<option value="Prevención riesgos">Prevención riesgos específicos</option>
+<option value="otro">Otro módulo (escribir)...</option>
+</select>
+<input type="text" id="prl-desc" placeholder="Nombre del módulo..." style="display:none;margin-top:4px">
+<label>Curso</label>
+<select id="prl-curso"><option value="">— General / Todos —</option></select>
+<label>Docente</label>
+<select id="prl-docente" onchange="handleCustomDoc(this,'prl-docente-custom')">
+<option value="">— No asignado —</option>
+<option value="__custom__">Otro (escribir)...</option>
+</select>
+<input type="text" id="prl-docente-custom" data-custom="1" placeholder="Nombre del docente..." style="display:none;margin-top:4px">
+<div class="row" style="margin-top:8px">
+<button class="btn btn-pri" onclick="anadirPRL()">Añadir</button>
+<button class="btn btn-red" onclick="eliminarPRLSel()">Eliminar</button>
+</div>
+<div id="prl-stats" style="margin-top:8px;font-size:11px;color:var(--mut)"></div>
+</div>
+<div class="card scroll" style="flex:1;padding:10px">
+<table class="data">
+<thead><tr><th>Fecha</th><th>Día</th><th>Módulo</th><th>Horas</th><th>Curso</th><th>Docente</th><th></th></tr></thead>
+<tbody id="tbody-prl"></tbody>
+</table>
+<div id="cal-prl" style="margin-top:15px"></div>
+</div>
+</div>
+</div>
+
+<!-- GANTT -->
+<div id="tab-gantt" class="panel">
+<div class="card" style="flex:1">
+<div class="card-title">Diagrama de Gantt</div>
+<div id="gantt-content" style="overflow-x:auto;min-height:300px">
+<p style="color:var(--mut);padding:24px;text-align:center">Genera el organigrama primero (pestaña Organigrama)</p>
+</div>
+</div>
+</div>
+
+<!-- FESTIVOS -->
+<div id="tab-festivos" class="panel">
+<div class="card" style="flex:1">
+<div class="card-title">Festivos del año</div>
+<div class="row" style="margin-bottom:10px">
+<div><label>Año</label><input type="number" id="anyo-fest" value="2026" min="2020" max="2100" onchange="renderFestivos()"></div>
+<div><label>Fecha (DD/MM/AAAA)</label><input type="text" id="f-fecha" placeholder="25/12/2026"></div>
+<div><label>Nombre</label><input type="text" id="f-nombre" placeholder="Navidad"></div>
+</div>
+<div class="row" style="margin-bottom:10px">
+<div><button class="btn btn-pri" onclick="anadirFestivo()">Añadir festivo extra</button></div>
+<div><button class="btn btn-red" onclick="eliminarFestivoSel()">Eliminar seleccionado</button></div>
+<div id="alert-fest" style="flex:2"></div>
+</div>
+<table class="data">
+<thead><tr><th>Fecha</th><th>Nombre</th><th>Tipo</th></tr></thead>
+<tbody id="tbody-fest"></tbody>
+</table>
+</div>
+</div>
+
+<!-- DOCENTES -->
+<div id="tab-docentes" class="panel">
+<div class="card" style="flex:1;display:flex;flex-direction:column;gap:8px">
+<div class="card-title">Docentes</div>
+<div class="row">
+<div><label>Nombre completo</label><input type="text" id="doc-nombre" placeholder="Juan García López"></div>
+<div><label>DNI</label><input type="text" id="doc-dni" placeholder="12345678A"></div>
+</div>
+<div class="row">
+<div><label>Especialidad</label>
+<select id="doc-espec">
+<option value="soldadura">Soldadura</option>
+<option value="tuberia">Tuberías</option>
+<option value="mecanica">Mecánica</option>
+<option value="electricidad">Electricidad</option>
+<option value="electronica">Electrónica</option>
+<option value="teoria">Teoría General</option>
+<option value="prl">PRL / Seguridad</option>
+<option value="general">General</option>
+</select>
+</div>
+<div><label>Teléfono</label><input type="tel" id="doc-tel" placeholder="600123456"></input></div>
+</div>
+<div class="row">
+<div><label>Email</label><input type="email" id="doc-email" placeholder="juan@email.com"></div>
+<div><label>Notas</label><input type="text" id="doc-notas" placeholder="Observaciones..."></div>
+</div>
+<div class="row" style="margin-top:8px">
+<button class="btn btn-pri" onclick="guardarDocente()">Guardar</button>
+<button class="btn btn-sec" onclick="editarDocenteSel()">Editar</button>
+<button class="btn btn-red" onclick="eliminarDocenteSel()">Eliminar</button>
+<div id="alert-doc" style="flex:2"></div>
+</div>
+<table class="data">
+<thead><tr><th>Nombre</th><th>DNI</th><th>Especialidad</th><th>Teléfono</th><th>Email</th></tr></thead>
+<tbody id="tbody-docentes"></tbody>
+</table>
+</div>
+</div>
+
+<!-- MODAL PROG -->
+<div class="overlay" id="modal-prog" onclick="if(event.target===this)G('modal-prog').classList.remove('open')">
+<div class="modal">
+<h2>Añadir Curso al Organigrama</h2>
+<div style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:6px;padding:10px 12px;margin-bottom:10px">
+<div style="font-size:11px;font-weight:bold;color:var(--pri);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px">Docentes</div>
+<label style="margin-top:0">Docente — Teoría</label>
+<select id="mp-doc-teo" onchange="handleCustomDoc(this,'mp-doc-teo-custom')">
+<option value="">— No asignado —</option>
+<option value="__custom__">Otro (escribir)...</option>
+</select>
+<input type="text" id="mp-doc-teo-custom" data-custom="1" placeholder="Escribe nombre..." style="display:none;margin-top:4px">
+<label>Docente — Taller</label>
+<select id="mp-doc-pra" onchange="handleCustomDoc(this,'mp-doc-pra-custom')">
+<option value="">— No asignado —</option>
+<option value="__custom__">Otro (escribir)...</option>
+</select>
+<input type="text" id="mp-doc-pra-custom" data-custom="1" placeholder="Escribe nombre..." style="display:none;margin-top:4px">
+<label>Docente — PRL</label>
+<select id="mp-doc-seg" onchange="handleCustomDoc(this,'mp-doc-seg-custom')">
+<option value="">— No asignado —</option>
+<option value="__custom__">Otro (escribir)...</option>
+</select>
+<input type="text" id="mp-doc-seg-custom" data-custom="1" placeholder="Escribe nombre..." style="display:none;margin-top:4px">
+</div>
+<label>Curso</label>
+<select id="mp-curso"></select>
+<div class="row" style="margin-top:4px">
+<div><label>Fecha de inicio</label><input type="date" id="mp-inicio"></div>
+<div><label>Turno</label>
+<select id="mp-turno">
+<option value="m7">Mañana 7h (08:00-15:00)</option>
+<option value="t7">Tarde 7h (15:00-22:00)</option>
+<option value="m6">Mañana 6h (08:00-14:00)</option>
+<option value="t6">Tarde 6h (16:00-22:00)</option>
+</select>
+</div>
+</div>
+<div class="row">
+<div><label>Horas/día</label><input type="number" id="mp-hdia" min="1" step="0.5" placeholder="7"></div>
+<div><label>Color</label>
+<select id="mp-color">
+<option value="#a9dfbf|#145a32">Verde</option>
+<option value="#aed6f1|#1a5276">Azul</option>
+<option value="#fad7a0|#784212">Naranja</option>
+<option value="#d7bde2|#4a235a">Morado</option>
+<option value="#fadbd8|#922b21">Rosa</option>
+<option value="#fef3cd|#7d6608">Amarillo</option>
+</select>
+</div>
+</div>
+<label>Etiqueta (opcional)</label>
+<input type="text" id="mp-label" placeholder="Ej: Soldadura Mañana">
+<div class="mfooter">
+<button class="btn btn-grey" onclick="G('modal-prog').classList.remove('open')">Cancelar</button>
+<button class="btn btn-pri" onclick="guardarProg()">Añadir</button>
+</div>
+</div>
+</div>
+
+<!-- MODAL CURSO -->
+<div class="overlay" id="modal-curso" onclick="if(event.target===this)G('modal-curso').classList.remove('open')">
+<div class="modal">
+<h2 id="mc-titulo">Nuevo Curso</h2>
+<div class="row">
+<div><label>Código</label><input type="text" id="mc-cod" placeholder="FMEC17EXP"></div>
+<div><label>Área</label><input type="text" id="mc-area" placeholder="Soldadura"></div>
+</div>
+<div class="row">
+<div><label>Horas totales</label><input type="number" id="mc-htot" placeholder="200"></div>
+<div><label>Horas/día</label><input type="number" id="mc-hdia" placeholder="7" step="0.5"></div>
+</div>
+<div class="row">
+<div><label>Tipo</label>
+<select id="mc-tipo">
+<option value="Programa Formativo">Programa Formativo</option>
+<option value="Certificado de Profesionalidad">Certificado de Profesionalidad</option>
+</select>
+</div>
+<label>Entidad financiadora</label>
+<input type="text" id="mc-entidad" placeholder="SEPE, Junta de Andalucía...">
+<div class="row">
+<div><label>Docente Teoría</label><input type="text" id="mc-doc-teo" placeholder="Nombre del docente"></div>
+<div><label>Docente Taller</label><input type="text" id="mc-doc-tal" placeholder="Nombre del docente"></div>
+</div>
+<label>Docente PRL</label>
+<input type="text" id="mc-doc-prl" placeholder="Nombre del docente">
+<div class="mfooter">
+<button class="btn btn-grey" onclick="G('modal-curso').classList.remove('open')">Cancelar</button>
+<button class="btn btn-pri" onclick="guardarCurso()">Guardar</button>
+</div>
+</div>
+</div>
+
+<script>
+// Constantes y helpers
+var G = function(id) { return document.getElementById(id); };
+var HOY = new Date().toISOString().slice(0,10);
+var K = { cu:'orgCursos_v2', ex:'orgExtras_v1', pr:'orgProgs_v2', te:'orgTeo_v1', pl:'orgPRL_v1', en:'orgEntidad_v1', dc:'orgDocentes_v1' };
+var ls = { g: function(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e) { return null; } }, s: function(k,v) { localStorage.setItem(k, JSON.stringify(v)); } };
+var getCu = function() { return ls.g(K.cu) || []; };
+var getEx = function() { return ls.g(K.ex) || {}; };
+var getPr = function() { return ls.g(K.pr) || []; };
+var getTe = function() { return ls.g(K.te) || []; };
+var getPl = function() { return ls.g(K.pl) || []; };
+var getEn = function() { return ls.g(K.en) || {tipo:'', otro:''}; };
+var getDc = function() { return ls.g(K.dc) || []; };
+
+var MESES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+var DN = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+var FC = {};
+var _org = [];
+
+// Funciones de fecha
+function pascua(y) {
+  var a = y % 19, b = Math.floor(y / 100), c = y % 100;
+  var d = Math.floor(b / 4), e = b % 4;
+  var f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+  var h = (19 * a + b - d - g + 15) % 30;
+  var i = Math.floor(c / 4), k = c % 4;
+  var l = (32 + 2 * e + 2 * i - h - k) % 7;
+  var m = Math.floor((a + 11 * h + 22 * l) / 451);
+  var mes = Math.floor((h + l - 7 * m + 114) / 31) - 1;
+  var dia = (h + l - 7 * m + 114) % 31 + 1;
+  return new Date(y, mes, dia);
+}
+function addD(d, n) { var r = new Date(d); r.setDate(r.getDate() + n); return r; }
+function iso(d) { return d instanceof Date ? d.toISOString().slice(0,10) : String(d); }
+function esES(s) { return s.slice(8,10) + '/' + s.slice(5,7) + '/' + s.slice(0,4); }
+
+function festivos(y, ex) {
+  var h = {}, add = function(d, n) { h[iso(d)] = n; };
+  add(new Date(y, 0, 1), 'Año Nuevo');
+  add(new Date(y, 0, 6), 'Reyes Magos');
+  add(new Date(y, 4, 1), 'Día del Trabajador');
+  add(new Date(y, 7, 15), 'Asunción');
+  add(new Date(y, 9, 12), 'Hispanidad');
+  add(new Date(y, 10, 1), 'Todos Santos');
+  add(new Date(y, 11, 6), 'Constitución');
+  add(new Date(y, 11, 8), 'Inmaculada');
+  add(new Date(y, 11, 25), 'Navidad');
+  var p = pascua(y);
+  add(addD(p, -3), 'Jueves Santo');
+  add(addD(p, -2), 'Viernes Santo');
+  add(new Date(y, 1, 28), 'Día de Andalucía');
+  var lc = addD(p, -48);
+  add(lc, 'Lunes de Carnaval (Cádiz)');
+  add(addD(lc, 1), 'Martes de Carnaval (Cádiz)');
+  add(new Date(y, 4, 15), 'San Isidro');
+  Object.keys(ex || {}).forEach(function(k) { if (k.startsWith(String(y))) h[k] = ex[k]; });
+  return h;
+}
+function getFest(y) { if (!FC[y]) FC[y] = festivos(y, getEx()); return FC[y]; }
+function esLab(d) { var dw = new Date(d).getDay(); if (dw === 0 || dw === 6) return false; return !getFest(new Date(d).getFullYear())[iso(new Date(d))]; }
+function calcOrg(inicio, tot, dia) {
+  var n = Math.ceil(tot / dia);
+  var cur = new Date(inicio);
+  while (!esLab(cur)) cur = addD(cur, 1);
+  var ini = new Date(cur);
+  var sess = [];
+  while (sess.length < n) { if (esLab(cur)) sess.push(new Date(cur)); cur = addD(cur, 1); }
+  return { ini: ini, fin: sess[sess.length - 1], sess: sess };
+}
+function turnoH(t) { return t.endsWith('7') ? 7 : 6; }
+function turnoLbl(t) {
+  var labels = { m7: 'Mañana 7h', t7: 'Tarde 7h', m6: 'Mañana 6h', t6: 'Tarde 6h' };
+  return labels[t] || t;
+}
+function showAlert(id, msg, tipo) {
+  var d = G(id);
+  if (!d) return;
+  d.className = 'alert alert-' + (tipo === 'ok' ? 'ok' : 'err');
+  d.textContent = msg;
+  setTimeout(function() { d.className = ''; d.textContent = ''; }, 4000);
+}
+
+// Tabs
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach(function(t, i) {
+    t.classList.toggle('active', ['org','cursos','teoricas','prl','gantt','festivos','docentes'][i] === id);
+  });
+  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+  G('tab-' + id).classList.add('active');
+  if (id === 'cursos') renderCursos();
+  if (id === 'festivos') renderFestivos();
+  if (id === 'teoricas') { selsCurso('t-curso'); renderTeorica(); renderCalTeorica(); }
+  if (id === 'prl') { selsCurso('prl-curso'); renderPRL(); renderCalPRL(); }
+  if (id === 'gantt') renderGantt();
+  if (id === 'docentes') renderDocentes();
+}
+
+// Organigrama
+function abrirModalProg() {
+  selCursoModal();
+  selDocentes();
+  G('mp-inicio').value = HOY;
+  G('mp-hdia').value = '';
+  G('mp-label').value = '';
+  G('mp-doc-teo').value = '';
+  G('mp-doc-pra').value = '';
+  G('mp-doc-seg').value = '';
+  G('mp-doc-teo-custom').value = '';
+  G('mp-doc-pra-custom').value = '';
+  G('mp-doc-seg-custom').value = '';
+  G('mp-doc-teo-custom').style.display = 'none';
+  G('mp-doc-pra-custom').style.display = 'none';
+  G('mp-doc-seg-custom').style.display = 'none';
+  G('modal-prog').classList.add('open');
+}
+
+function selCursoModal() {
+  var s = G('mp-curso');
+  s.innerHTML = '';
+  getCu().forEach(function(c, i) {
+    var o = document.createElement('option');
+    o.value = i;
+    o.textContent = c.codigo + ' — ' + c.nombre;
+    s.appendChild(o);
+  });
+}
+
+function guardarProg() {
+  var idx = parseInt(G('mp-curso').value);
+  if (isNaN(idx)) { alert('Selecciona un curso.'); return; }
+  var c = getCu()[idx];
+  if (!c) return;
+  var inicio = G('mp-inicio').value;
+  if (!inicio) { alert('Introduce fecha de inicio.'); return; }
+  var turno = G('mp-turno').value;
+  var hdiaO = parseFloat(G('mp-hdia').value) || null;
+  var hdia = hdiaO || turnoH(turno);
+  var colorParts = G('mp-color').value.split('|');
+  var bg = colorParts[0], fg = colorParts[1];
+  var label = G('mp-label').value.trim() || c.codigo;
+  var docTeo = G('mp-doc-teo').value;
+  var docPra = G('mp-doc-pra').value;
+  var docSeg = G('mp-doc-seg').value;
+  if (docTeo === '__custom__') docTeo = G('mp-doc-teo-custom').value.trim() || '';
+  if (docPra === '__custom__') docPra = G('mp-doc-pra-custom').value.trim() || '';
+  if (docSeg === '__custom__') docSeg = G('mp-doc-seg-custom').value.trim() || '';
+  var pr = getPr();
+  pr.push({ idx: idx, turno: turno, inicio: inicio, hdia: hdia, bg: bg, fg: fg, label: label, docTeo: docTeo, docPra: docPra, docSeg: docSeg });
+  ls.s(K.pr, pr);
+  G('modal-prog').classList.remove('open');
+  renderListaProg();
+}
+
+function renderListaProg() {
+  var div = G('lista-prog');
+  var pr = getPr();
+  var cu = getCu();
+  if (!pr.length) {
+    div.innerHTML = '<p style="color:var(--mut);font-size:11px;text-align:center;padding:8px">Sin cursos añadidos</p>';
+    return;
+  }
+  var html = '';
+  pr.forEach(function(p, i) {
+    var c = cu[p.idx] || { codigo: '?', nombre: '?', horas_totales: 0 };
+    var finStr = 'calculando...';
+    var nDias = '';
+    try {
+      var result = calcOrg(new Date(p.inicio), parseFloat(c.horas_totales), parseFloat(p.hdia));
+      finStr = esES(iso(result.fin));
+      nDias = result.sess.length + ' días lectivos';
+    } catch(e) {}
+    html += '<div class="prog-row" style="border-color:' + p.bg + '">';
+    html += '<div class="dot" style="background:' + p.bg + '"></div>';
+    html += '<div class="txt"><strong style="color:var(--pri)">' + p.label + '</strong><br>';
+    html += '<span style="color:var(--mut)">' + turnoLbl(p.turno) + '</span><br>';
+    html += '<strong>' + esES(p.inicio) + '</strong> → <strong>' + finStr + '</strong><br>';
+    html += '<span style="font-size:10px;color:var(--mut)">' + c.horas_totales + 'h totales · ' + p.hdia + 'h/día · ' + nDias + '</span>';
+    if (p.docTeo || p.docPra || p.docSeg) {
+      html += '<div style="font-size:10px;color:#2471a3;margin-top:3px">';
+      if (p.docTeo) html += p.docTeo + '<br>';
+      if (p.docPra) html += p.docPra + '<br>';
+      if (p.docSeg) html += p.docSeg;
+      html += '</div>';
+    }
+    html += '</div>';
+    html += '<button class="btn btn-red btn-sm" onclick="elimProg(' + i + ')" style="flex-shrink:0">X</button>';
+    html += '</div>';
+  });
+  div.innerHTML = html;
+}
+
+function elimProg(i) {
+  var p = getPr();
+  p.splice(i, 1);
+  ls.s(K.pr, p);
+  _org = _org.filter(function(org) { return org.progIdx !== i; });
+  _org.forEach(function(org, idx) {
+    org.progIdx = idx;
+  });
+  G('btn-html').disabled = _org.length === 0;
+  G('btn-excel').disabled = _org.length === 0;
+  var resumenHtml = '';
+  _org.forEach(function(d) {
+    resumenHtml += '<div style="border-left:4px solid ' + d.bg + ';padding:7px 10px;margin-bottom:6px;background:#f8f9fa;border-radius:5px;font-size:11px;line-height:1.6;display:flex;align-items:flex-start;gap:8px">';
+    resumenHtml += '<div style="flex:1">';
+    resumenHtml += '<strong style="color:var(--pri)">' + d.lbl + '</strong><br>';
+    resumenHtml += '<span style="color:var(--mut)">' + turnoLbl(d.turno) + '</span><br>';
+    resumenHtml += esES(iso(d.ini)) + ' → ' + esES(iso(d.fin)) + '<br>';
+    resumenHtml += d.sess.length + ' días lectivos · ' + d.c.horas_totales + 'h totales';
+    resumenHtml += '</div>';
+    resumenHtml += '<button class="btn btn-red btn-sm" onclick="elimOrgByProgIdx(' + d.progIdx + ')" style="flex-shrink:0" title="Eliminar">X</button>';
+    resumenHtml += '</div>';
+  });
+  if (!_org.length) {
+    resumenHtml = '<p style="color:var(--mut);font-size:11px;text-align:center;padding:8px">Sin cursos en el organigrama</p>';
+    G('resumen-org').style.display = 'none';
+  }
+  G('fichas-resumen').innerHTML = resumenHtml;
+  renderListaProg();
+  renderCalOrg();
+  renderGantt();
+}
+
+function generarOrganigrama() {
+  var pr = getPr();
+  var cu = getCu();
+  if (!pr.length) { alert('Añade al menos un curso.'); return; }
+  _org = [];
+  pr.forEach(function(p, i) {
+    var c = cu[p.idx];
+    if (!c) return;
+    var result = calcOrg(new Date(p.inicio), parseFloat(c.horas_totales), parseFloat(p.hdia));
+    _org.push({
+      p: p, c: c, ini: result.ini, fin: result.fin, sess: result.sess,
+      ss: new Set(result.sess.map(function(s) { return iso(s); })),
+      bg: p.bg, fg: p.fg, lbl: p.label || c.codigo, turno: p.turno,
+      progIdx: i
+    });
+  });
+  G('btn-html').disabled = false;
+  G('btn-excel').disabled = false;
+  G('resumen-org').style.display = '';
+  var resumenHtml = '';
+  _org.forEach(function(d) {
+    resumenHtml += '<div style="border-left:4px solid ' + d.bg + ';padding:7px 10px;margin-bottom:6px;background:#f8f9fa;border-radius:5px;font-size:11px;line-height:1.6;display:flex;align-items:flex-start;gap:8px">';
+    resumenHtml += '<div style="flex:1">';
+    resumenHtml += '<strong style="color:var(--pri)">' + d.lbl + '</strong><br>';
+    resumenHtml += '<span style="color:var(--mut)">' + turnoLbl(d.turno) + '</span><br>';
+    resumenHtml += esES(iso(d.ini)) + ' → ' + esES(iso(d.fin)) + '<br>';
+    resumenHtml += d.sess.length + ' días lectivos · ' + d.c.horas_totales + 'h totales';
+    resumenHtml += '</div>';
+    resumenHtml += '<button class="btn btn-red btn-sm" onclick="elimOrgByProgIdx(' + d.progIdx + ')" style="flex-shrink:0" title="Eliminar">X</button>';
+    resumenHtml += '</div>';
+  });
+  G('fichas-resumen').innerHTML = resumenHtml;
+  renderCalOrg();
+}
+
+function elimOrgByProgIdx(progIdx) {
+  var p = getPr();
+  p.splice(progIdx, 1);
+  ls.s(K.pr, p);
+  _org = _org.filter(function(org) { return org.progIdx !== progIdx; });
+  _org.forEach(function(org, idx) {
+    org.progIdx = idx;
+  });
+  G('btn-html').disabled = _org.length === 0;
+  G('btn-excel').disabled = _org.length === 0;
+  var resumenHtml = '';
+  _org.forEach(function(d) {
+    resumenHtml += '<div style="border-left:4px solid ' + d.bg + ';padding:7px 10px;margin-bottom:6px;background:#f8f9fa;border-radius:5px;font-size:11px;line-height:1.6;display:flex;align-items:flex-start;gap:8px">';
+    resumenHtml += '<div style="flex:1">';
+    resumenHtml += '<strong style="color:var(--pri)">' + d.lbl + '</strong><br>';
+    resumenHtml += '<span style="color:var(--mut)">' + turnoLbl(d.turno) + '</span><br>';
+    resumenHtml += esES(iso(d.ini)) + ' → ' + esES(iso(d.fin)) + '<br>';
+    resumenHtml += d.sess.length + ' días lectivos · ' + d.c.horas_totales + 'h totales';
+    resumenHtml += '</div>';
+    resumenHtml += '<button class="btn btn-red btn-sm" onclick="elimOrgByProgIdx(' + d.progIdx + ')" style="flex-shrink:0" title="Eliminar">X</button>';
+    resumenHtml += '</div>';
+  });
+  if (!_org.length) {
+    resumenHtml = '<p style="color:var(--mut);font-size:11px;text-align:center;padding:8px">Sin cursos en el organigrama</p>';
+    G('resumen-org').style.display = 'none';
+    G('btn-html').disabled = true;
+    G('btn-excel').disabled = true;
+  }
+  G('fichas-resumen').innerHTML = resumenHtml;
+  renderListaProg();
+  renderCalOrg();
+  renderGantt();
+}
+
+function buildMes(y, m, orgData, tSet, prlSet) {
+  if (!FC[y]) FC[y] = festivos(y, getEx());
+  var fest = FC[y];
+  var dias = new Date(y, m, 0).getDate();
+  var pd = (new Date(y, m - 1, 1).getDay() + 6) % 7;
+  var wrap = document.createElement('div');
+  wrap.className = 'mes';
+  var h = '<div class="mes-titulo">' + MESES[m] + ' ' + y + '</div><table><thead><tr>';
+  h += '<th>Día</th><th>Mañana</th><th>Tarde</th><th>Teórica/PRL</th>';
+  h += '</tr></thead><tbody>';
+  var dia = 1;
+  while (dia <= dias) {
+    h += '<tr>';
+    for (var c = 0; c < 4; c++) {
+      if (dia === 1 && pd > 0 && c < pd) {
+        h += '<td class="vacio"></td>';
+        continue;
+      }
+      if (dia > dias) {
+        h += '<td class="vacio"></td>';
+        continue;
+      }
+      var isoD = y + '-' + String(m).padStart(2, '0') + '-' + String(dia).padStart(2, '0');
+      var dw = (new Date(isoD).getDay() + 6) % 7;
+      var cls = '';
+      if (dw >= 5) cls = 'finde';
+      if (fest[isoD]) cls = 'fest';
+      if (isoD === HOY) cls += ' hoy';
+      if (c === 0) {
+        h += '<td class="' + cls + '" style="font-weight:bold;font-size:12px;text-align:center;padding:4px">' + dia + '</td>';
+      } else if (c === 1) {
+        var mp = '';
+        if (orgData) {
+          orgData.filter(function(d) { return d.ss.has(isoD) && d.turno.startsWith('m'); }).forEach(function(d) {
+            mp += '<span class="pill" style="background:' + d.bg + ';color:' + d.fg + ';display:block;margin:1px 0;font-size:9px">' + d.lbl.slice(0, 12) + '</span>';
+          });
+        }
+        h += '<td class="' + cls + '" style="padding:2px;vertical-align:top">' + mp + '</td>';
+      } else if (c === 2) {
+        var tp = '';
+        if (orgData) {
+          orgData.filter(function(d) { return d.ss.has(isoD) && d.turno.startsWith('t'); }).forEach(function(d) {
+            tp += '<span class="pill" style="background:' + d.bg + ';color:' + d.fg + ';display:block;margin:1px 0;font-size:9px">' + d.lbl.slice(0, 12) + '</span>';
+          });
+        }
+        h += '<td class="' + cls + '" style="padding:2px;vertical-align:top">' + tp + '</td>';
+      } else {
+        var ep = '';
+        if (tSet && tSet[isoD]) {
+          tSet[isoD].forEach(function(t) {
+            ep += '<span class="pill" style="background:#fef9e7;color:#7d6608;display:block;margin:1px 0;font-size:9px">T:' + t.horas + 'h</span>';
+          });
+        }
+        if (prlSet && prlSet[isoD]) {
+          prlSet[isoD].forEach(function(p) {
+            ep += '<span class="pill" style="background:#f9e3c0;color:#784212;display:block;margin:1px 0;font-size:9px">P:' + p.horas + 'h</span>';
+          });
+        }
+        h += '<td class="' + cls + '" style="padding:2px;vertical-align:top">' + ep + '</td>';
+      }
+    }
+    h += '</tr>';
+    dia++;
+  }
+  h += '</tbody></table>';
+  wrap.innerHTML = h;
+  return wrap;
+}
+
+function renderCalOrg() {
+  if (!_org.length) return;
+  var iniG = new Date(Math.min.apply(null, _org.map(function(d) { return d.ini; })));
+  var finG = new Date(Math.max.apply(null, _org.map(function(d) { return d.fin; })));
+  var te = getTe();
+  var pl = getPl();
+  var tSet = {};
+  te.forEach(function(t) { if (!tSet[t.fecha]) tSet[t.fecha] = []; tSet[t.fecha].push(t); });
+  var pSet = {};
+  pl.forEach(function(p) { if (!pSet[p.fecha]) pSet[p.fecha] = []; pSet[p.fecha].push(p); });
+  var div = G('cal-org');
+  div.removeAttribute('style');
+  div.innerHTML = '';
+  var cals = document.createElement('div');
+  cals.className = 'calendarios';
+  var curM = new Date(iniG.getFullYear(), iniG.getMonth(), 1);
+  var ulM = new Date(finG.getFullYear(), finG.getMonth(), 1);
+  while (curM <= ulM) {
+    cals.appendChild(buildMes(curM.getFullYear(), curM.getMonth() + 1, _org, tSet, pSet));
+    curM = new Date(curM.getFullYear(), curM.getMonth() + 1, 1);
+  }
+  div.appendChild(cals);
+}
+
+function exportarHTML() {
+  if (!_org.length) { alert('Genera el organigrama primero.'); return; }
+  var sty = '*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px}@page{size:A3 landscape;margin:10mm}';
+  sty += 'header{background:#1a3a5c;color:#fff;padding:10px 15px;margin-bottom:9px}';
+  sty += '.meses{display:flex;flex-wrap:wrap;gap:10px}.mes{border:1px solid #ccc;border-radius:5px;overflow:hidden;min-width:320px}';
+  sty += '.mes-titulo{background:#1a3a5c;color:#fff;text-align:center;padding:6px;font-weight:bold}';
+  sty += 'table{width:100%;border-collapse:collapse}th{background:#d6eaf8;color:#1a3a5c;padding:5px;text-align:center}';
+  sty += 'td{text-align:center;padding:3px;border:1px solid #eee;font-size:9px}td.finde{background:#f0f3f7}td.fest{background:#fde8e8}';
+  var iniG = new Date(Math.min.apply(null, _org.map(function(d) { return d.ini; })));
+  var finG = new Date(Math.max.apply(null, _org.map(function(d) { return d.fin; })));
+  var mH = '';
+  var curM = new Date(iniG.getFullYear(), iniG.getMonth(), 1);
+  var ulM = new Date(finG.getFullYear(), finG.getMonth(), 1);
+  while (curM <= ulM) {
+    var y = curM.getFullYear();
+    var m = curM.getMonth() + 1;
+    var fest = getFest(y);
+    var dias = new Date(y, m, 0).getDate();
+    var pd = (new Date(y, m - 1, 1).getDay() + 6) % 7;
+    var rows = '';
+    var dia = 1;
+    while (dia <= dias) {
+      rows += '<tr>';
+      for (var c = 0; c < 4; c++) {
+        if (dia === 1 && pd > 0 && c < pd) {
+          rows += '<td></td>';
+        } else if (dia > dias) {
+          rows += '<td></td>';
+        } else {
+          var isoD = y + '-' + String(m).padStart(2, '0') + '-' + String(dia).padStart(2, '0');
+          var dw = (new Date(isoD).getDay() + 6) % 7;
+          var cls = dw >= 5 ? 'finde' : '';
+          if (fest[isoD]) cls = 'fest';
+          var content = '';
+          if (c === 0) content = dia;
+          rows += '<td class="' + cls + '">' + content + '</td>';
+        }
+      }
+      rows += '</tr>';
+      dia++;
+    }
+    mH += '<div class="mes"><div class="mes-titulo">' + MESES[m] + ' ' + y + '</div><table><thead><tr><th>Día</th><th>Mañana</th><th>Tarde</th><th>Teórica/PRL</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    curM = new Date(y, m, 1);
+  }
+  var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Organigrama</title><style>' + sty + '</style></head><body>';
+  html += '<header><h1>ORGANIGRAMA - MEISA Los Barrios</h1></header>';
+  html += '<div class="meses">' + mH + '</div>';
+  html += '</body></html>';
+  window.open(URL.createObjectURL(new Blob([html], { type: 'text/html' })), '_blank');
+}
+
+function exportarExcel() {
+  if (!_org.length) return;
+  if (typeof XLSX === 'undefined') { alert('Necesitas internet para Excel.'); return; }
+  var wb = XLSX.utils.book_new();
+  _org.forEach(function(d) {
+    var rows = [
+      ['ORGANIGRAMA - ' + d.lbl],
+      [d.c.codigo + ' - ' + d.c.nombre],
+      ['Turno: ' + turnoLbl(d.turno) + ' | ' + esES(iso(d.ini)) + ' - ' + esES(iso(d.fin)) + ' | ' + d.sess.length + ' días'],
+      ['#', 'Fecha', 'Día', 'H.Ses.', 'H.Acum.']
+    ];
+    var hTot = parseFloat(d.c.horas_totales);
+    var hD = parseFloat(d.p.hdia);
+    var ac = 0;
+    d.sess.forEach(function(s, i) {
+      var ul = i === d.sess.length - 1;
+      var r = hTot % hD;
+      var hs = (ul && r !== 0) ? r : hD;
+      ac += hs;
+      rows.push([i + 1, esES(iso(s)), DN[s.getDay()], hs + 'h', ac.toFixed(1) + 'h']);
+    });
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 5 }, { wch: 13 }, { wch: 13 }, { wch: 9 }, { wch: 11 }];
+    XLSX.utils.book_append_sheet(wb, ws, d.lbl.slice(0, 28));
+  });
+  var te = getTe();
+  if (te.length) {
+    var rows = [['CLASES TEÓRICAS'], ['Fecha', 'Día', 'Curso', 'Descripción', 'Horas']];
+    te.forEach(function(t) { rows.push([esES(t.fecha), DN[new Date(t.fecha).getDay()], t.curso || 'General', t.desc, t.horas]); });
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Teoricas');
+  }
+  XLSX.writeFile(wb, 'Organigrama_MEISA.xlsx');
+}
+
+// Cursos
+var _iCurso = null;
+function nuevoCurso() {
+  _iCurso = null;
+  G('mc-titulo').textContent = 'Nuevo Curso';
+  G('mc-cod').value = '';
+  G('mc-area').value = '';
+  G('mc-htot').value = '';
+  G('mc-hdia').value = '7';
+  G('mc-tipo').value = 'Programa Formativo';
+  G('mc-entidad').value = '';
+  G('mc-doc-teo').value = '';
+  G('mc-doc-tal').value = '';
+  G('mc-doc-prl').value = '';
+  G('modal-curso').classList.add('open');
+}
+
+function guardarCurso() {
+  var cod = G('mc-cod').value.trim();
+  if (!cod) { alert('El código es obligatorio.'); return; }
+  var nombre = G('mc-area').value.trim() || cod;
+  var htot = parseFloat(G('mc-htot').value) || 200;
+  var hdia = parseFloat(G('mc-hdia').value) || 7;
+  var tipo = G('mc-tipo').value;
+  var entidad = G('mc-entidad').value.trim();
+  var docTeo = G('mc-doc-teo').value.trim();
+  var docTal = G('mc-doc-tal').value.trim();
+  var docPRL = G('mc-doc-prl').value.trim();
+  var cu = getCu();
+  var curso = { codigo: cod, nombre: nombre, area: nombre, horas_totales: htot, horas_diarias: hdia, tipo: tipo, entidad: entidad, docTeo: docTeo, docTal: docTal, docPRL: docPRL };
+  if (_iCurso !== null) {
+    cu[_iCurso] = curso;
+  } else {
+    cu.push(curso);
+  }
+  ls.s(K.cu, cu);
+  G('modal-curso').classList.remove('open');
+  renderCursos();
+  showAlert('alert-cursos', 'Guardado.', 'ok');
+}
+
+function renderCursos() {
+  var tb = G('tbody-cursos');
+  tb.innerHTML = '';
+  getCu().forEach(function(c, i) {
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + c.codigo + '</td><td>' + c.nombre + '</td><td>' + (c.area || '') + '</td><td>' + c.horas_totales + '</td><td>' + c.horas_diarias + '</td><td>' + c.tipo + '</td><td>' + (c.entidad || '') + '</td>';
+    tr.onclick = function() { _iCurso = i; nuevoCurso(); };
+    tb.appendChild(tr);
+  });
+}
+
+function descargarPlantilla() {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeffcodigo;nombre;area;horas_totales;horas_diarias;tipo;entidad;docTeo;docTal;docPRL\n'], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'plantilla_cursos.csv';
+  a.click();
+}
+
+function importarCSV(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var lines = e.target.result.split('\n');
+    var cu = getCu();
+    var err = 0;
+    for (var i = 1; i < lines.length; i++) {
+      var parts = lines[i].split(';');
+      if (parts.length >= 5) {
+        cu.push({
+          codigo: parts[0].trim(),
+          nombre: parts[1].trim() || parts[0].trim(),
+          area: parts[2].trim(),
+          horas_totales: parseFloat(parts[3]) || 200,
+          horas_diarias: parseFloat(parts[4]) || 7,
+          tipo: parts[5] ? parts[5].trim() : 'Programa Formativo',
+          entidad: parts[6] ? parts[6].trim() : '',
+          docTeo: parts[7] ? parts[7].trim() : '',
+          docTal: parts[8] ? parts[8].trim() : '',
+          docPRL: parts[9] ? parts[9].trim() : ''
+        });
+      } else {
+        err++;
+      }
+    }
+    ls.s(K.cu, cu);
+    renderCursos();
+    showAlert('alert-cursos', 'Importados: ' + (cu.length > 0 ? cu.length : 0) + (err ? ' | Errores: ' + err : ''), err ? 'err' : 'ok');
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// Teóricas
+var _fTeo = null;
+function selsCurso(id) {
+  var s = G(id);
+  if (!s) return;
+  var v = s.value;
+  s.innerHTML = '<option value="">— General / Todos —</option>';
+  getCu().forEach(function(c) {
+    var o = document.createElement('option');
+    o.value = c.codigo;
+    o.textContent = c.codigo + ' — ' + c.nombre;
+    s.appendChild(o);
+  });
+  s.value = v;
+}
+
+function anadirTeorica() {
+  var fecha = G('t-fecha').value;
+  if (!fecha) { alert('Introduce fecha.'); return; }
+  var desc = G('t-desc').value.trim();
+  if (!desc) { alert('Introduce descripción.'); return; }
+  var horas = parseFloat(G('t-horas').value) || 2;
+  var curso = G('t-curso').value;
+  var docente = G('t-docente').value;
+  if (docente === '__custom__') docente = G('t-docente-custom').value.trim() || '';
+  var te = getTe();
+  te.push({ fecha: fecha, desc: desc, horas: horas, curso: curso, docente: docente });
+  te.sort(function(a, b) { return a.fecha.localeCompare(b.fecha); });
+  ls.s(K.te, te);
+  G('t-desc').value = '';
+  G('t-docente').value = '';
+  G('t-docente-custom').value = '';
+  G('t-docente-custom').style.display = 'none';
+  renderTeorica();
+  renderCalTeorica();
+  if (_org.length) { renderCalOrg(); renderGantt(); }
+}
+
+function renderTeorica() {
+  var tb = G('tbody-teoricas');
+  if (!tb) return;
+  tb.innerHTML = '';
+  var te = getTe();
+  te.forEach(function(x, i) {
+    var tr = document.createElement('tr');
+    if (i === _fTeo) tr.className = 'sel';
+    tr.innerHTML = '<td>' + esES(x.fecha) + '</td><td>' + DN[new Date(x.fecha).getDay()] + '</td><td>' + (x.curso || 'General') + '</td><td>' + (x.docente || '-') + '</td><td>' + x.desc + '</td><td style="text-align:center">' + x.horas + 'h</td><td><button class="btn btn-sm btn-red" onclick="eliminarTeorica(' + i + ')">X</button></td>';
+    tb.appendChild(tr);
+  });
+  var tot = te.reduce(function(s, x) { return s + x.horas; }, 0);
+  G('t-total').textContent = te.length + ' clases | ' + tot + ' horas';
+}
+
+function eliminarTeorica(i) {
+  var te = getTe();
+  te.splice(i, 1);
+  ls.s(K.te, te);
+  renderTeorica();
+  renderCalTeorica();
+  if (_org.length) { renderCalOrg(); renderGantt(); }
+}
+
+function eliminarTeoricaSel() {
+  if (_fTeo === null) { alert('Selecciona una clase.'); return; }
+  var te = getTe();
+  te.splice(_fTeo, 1);
+  ls.s(K.te, te);
+  _fTeo = null;
+  renderTeorica();
+  renderCalTeorica();
+  if (_org.length) { renderCalOrg(); renderGantt(); }
+}
+
+function renderCalTeorica() {
+  var te = getTe();
+  var div = G('cal-teorica');
+  if (!te.length) { div.innerHTML = '<p style="color:var(--mut);padding:16px">Sin clases teóricas.</p>'; return; }
+  var fechas = te.map(function(x) { return new Date(x.fecha); });
+  var ini = new Date(Math.min.apply(null, fechas));
+  var fin = new Date(Math.max.apply(null, fechas));
+  var tSet = {};
+  te.forEach(function(x) { if (!tSet[x.fecha]) tSet[x.fecha] = []; tSet[x.fecha].push(x); });
+  div.innerHTML = '';
+  var cals = document.createElement('div');
+  cals.className = 'calendarios';
+  var curM = new Date(ini.getFullYear(), ini.getMonth(), 1);
+  var ulM = new Date(fin.getFullYear(), fin.getMonth(), 1);
+  while (curM <= ulM) {
+    cals.appendChild(buildMes(curM.getFullYear(), curM.getMonth() + 1, null, tSet, null));
+    curM = new Date(curM.getFullYear(), curM.getMonth() + 1, 1);
+  }
+  div.appendChild(cals);
+}
+
+// PRL
+var _fPRL = null;
+function anadirPRL() {
+  var fecha = G('prl-fecha').value;
+  if (!fecha) { alert('Introduce fecha.'); return; }
+  var modSel = G('prl-modulo').value;
+  var desc = G('prl-desc').value.trim();
+  var modulo = modSel === 'otro' ? desc : modSel;
+  if (!modulo) { alert('Elige un módulo.'); return; }
+  var horas = parseFloat(G('prl-horas').value) || 2;
+  var curso = G('prl-curso').value;
+  var docente = G('prl-docente').value;
+  if (docente === '__custom__') docente = G('prl-docente-custom').value.trim() || '';
+  var pl = getPl();
+  pl.push({ fecha: fecha, modulo: modulo, desc: desc, horas: horas, curso: curso, docente: docente });
+  pl.sort(function(a, b) { return a.fecha.localeCompare(b.fecha); });
+  ls.s(K.pl, pl);
+  G('prl-desc').value = '';
+  G('prl-docente').value = '';
+  G('prl-docente-custom').value = '';
+  G('prl-docente-custom').style.display = 'none';
+  renderPRL();
+  renderCalPRL();
+  if (_org.length) { renderCalOrg(); renderGantt(); }
+}
+
+function renderPRL() {
+  var tb = G('tbody-prl');
+  if (!tb) return;
+  tb.innerHTML = '';
+  var pl = getPl();
+  pl.forEach(function(x, i) {
+    var tr = document.createElement('tr');
+    if (i === _fPRL) tr.className = 'sel';
+    tr.innerHTML = '<td>' + esES(x.fecha) + '</td><td>' + DN[new Date(x.fecha).getDay()] + '</td><td>' + x.modulo + '</td><td style="text-align:center">' + x.horas + 'h</td><td>' + (x.curso || 'General') + '</td><td>' + (x.docente || '-') + '</td><td><button class="btn btn-sm btn-red" onclick="eliminarPRL(' + i + ')">X</button></td>';
+    tb.appendChild(tr);
+  });
+  var tot = pl.reduce(function(s, x) { return s + x.horas; }, 0);
+  G('prl-stats').innerHTML = '<strong>' + pl.length + '</strong> sesiones | <strong>' + tot + 'h</strong> PRL';
+}
+
+function eliminarPRL(i) {
+  var pl = getPl();
+  pl.splice(i, 1);
+  ls.s(K.pl, pl);
+  renderPRL();
+  renderCalPRL();
+  if (_org.length) { renderCalOrg(); renderGantt(); }
+}
+
+function eliminarPRLSel() {
+  if (_fPRL === null) { alert('Selecciona una sesión.'); return; }
+  var pl = getPl();
+  pl.splice(_fPRL, 1);
+  ls.s(K.pl, pl);
+  _fPRL = null;
+  renderPRL();
+  renderCalPRL();
+  if (_org.length) { renderCalOrg(); renderGantt(); }
+}
+
+function renderCalPRL() {
+  var pl = getPl();
+  var div = G('cal-prl');
+  if (!pl.length) { div.innerHTML = '<p style="color:var(--mut);padding:16px">Sin sesiones PRL.</p>'; return; }
+  var fechas = pl.map(function(x) { return new Date(x.fecha); });
+  var ini = new Date(Math.min.apply(null, fechas));
+  var fin = new Date(Math.max.apply(null, fechas));
+  var pSet = {};
+  pl.forEach(function(x) { if (!pSet[x.fecha]) pSet[x.fecha] = []; pSet[x.fecha].push(x); });
+  div.innerHTML = '';
+  var cals = document.createElement('div');
+  cals.className = 'calendarios';
+  var curM = new Date(ini.getFullYear(), ini.getMonth(), 1);
+  var ulM = new Date(fin.getFullYear(), fin.getMonth(), 1);
+  while (curM <= ulM) {
+    cals.appendChild(buildMes(curM.getFullYear(), curM.getMonth() + 1, null, null, pSet));
+    curM = new Date(curM.getFullYear(), curM.getMonth() + 1, 1);
+  }
+  div.appendChild(cals);
+}
+
+// Festivos
+var _fFest = null;
+function renderFestivos() {
+  var y = parseInt(G('anyo-fest').value);
+  var ex = getEx();
+  var f = festivos(y, ex);
+  var exSet = {};
+  Object.keys(ex).forEach(function(k) { if (k.startsWith(String(y))) exSet[k] = true; });
+  var tb = G('tbody-fest');
+  tb.innerHTML = '';
+  Object.keys(f).sort().forEach(function(isoD) {
+    var tr = document.createElement('tr');
+    if (_fFest === isoD) tr.className = 'sel';
+    var nom = f[isoD];
+    var isEx = exSet[isoD] ? true : false;
+    tr.innerHTML = '<td>' + esES(isoD) + '</td><td>' + nom + '</td><td>' + (isEx ? 'Extra' : 'Automático') + '</td>';
+    tr.onclick = function() { _fFest = isEx ? isoD : null; renderFestivos(); };
+    tb.appendChild(tr);
+  });
+}
+
+function anadirFestivo() {
+  var txt = G('f-fecha').value.trim();
+  var nom = G('f-nombre').value.trim();
+  if (!txt || !nom) { alert('Rellena fecha y descripción.'); return; }
+  var parts = txt.split('/');
+  if (parts.length !== 3) { alert('Formato: DD/MM/AAAA'); return; }
+  var isoD = parts[2] + '-' + parts[1].padStart(2, '0') + '-' + parts[0].padStart(2, '0');
+  var e = getEx();
+  e[isoD] = nom;
+  ls.s(K.ex, e);
+  FC = {};
+  G('f-fecha').value = '';
+  G('f-nombre').value = '';
+  renderFestivos();
+  showAlert('alert-fest', 'Añadido: ' + txt + ' — ' + nom, 'ok');
+}
+
+function eliminarFestivoSel() {
+  if (!_fFest) { alert('Selecciona un festivo extra.'); return; }
+  var e = getEx();
+  delete e[_fFest];
+  ls.s(K.ex, e);
+  FC = {};
+  _fFest = null;
+  renderFestivos();
+}
+
+// Gantt
+function renderGantt() {
+  var div = G('gantt-content');
+  if (!_org.length) {
+    div.innerHTML = '<p style="color:var(--mut);padding:24px;text-align:center">Genera el organigrama primero (pestaña Organigrama)</p>';
+    return;
+  }
+  var te = getTe();
+  var pl = getPl();
+  var teAllDates = te.map(function(t) { return t.fecha; });
+  var plAllDates = pl.map(function(p) { return p.fecha; });
+  var allDates = _org.map(function(d) { return d.ini; }).concat(_org.map(function(d) { return d.fin; }), teAllDates, plAllDates);
+  var iniG = new Date(Math.min.apply(null, allDates.map(function(d) { return new Date(d); })));
+  var finG = new Date(Math.max.apply(null, allDates.map(function(d) { return new Date(d); })));
+  var totalDays = Math.ceil((finG - iniG) / 86400000) + 1;
+  var DW = 24;
+  
+  var html = '<div style="overflow-x:auto;background:#fff;border-radius:8px;padding:15px">';
+  html += '<div style="width:' + (200 + totalDays * DW) + 'px">';
+  
+  // Cabecera con meses
+  html += '<div style="display:flex;border-bottom:2px solid #1a3a5c;padding-bottom:8px;margin-bottom:10px;white-space:nowrap">';
+  html += '<div style="width:200px;min-width:200px;background:#1a3a5c;color:#fff;padding:8px 12px;font-weight:bold;font-size:12px;border-radius:5px 0 0 5px">Curso / Turno</div>';
+  html += '<div style="flex:1;position:relative;height:50px;overflow:hidden">';
+  
+  // Lineas de meses
+  var curM = new Date(iniG.getFullYear(), iniG.getMonth(), 1);
+  var endM = new Date(finG.getFullYear(), finG.getMonth(), 1);
+  while (curM <= endM) {
+    var y = curM.getFullYear();
+    var m = curM.getMonth();
+    var mStart = new Date(y, m, 1);
+    var mEnd = new Date(y, m + 1, 0);
+    var sd = Math.max(0, Math.round((mStart - iniG) / 86400000));
+    var ed = Math.min(totalDays - 1, Math.round((mEnd - iniG) / 86400000));
+    var leftPx = (sd * DW);
+    var widthPx = ((ed - sd + 1) * DW);
+    html += '<div style="position:absolute;left:' + leftPx + 'px;width:' + widthPx + 'px;text-align:center;font-size:14px;font-weight:bold;color:#1a3a5c;background:#d6eaf8;padding:4px 2px;border-right:1px solid #aed6f1;box-sizing:border-box;overflow:hidden;white-space:nowrap;height:50px;display:flex;align-items:center;justify-content:center">' + MESES[m + 1] + ' <span style="font-size:11px;font-weight:normal">' + y + '</span></div>';
+    curM = new Date(y, m + 1, 1);
+  }
+  html += '</div>';
+  html += '</div>';
+  
+  // Cabecera con dias (todos los dias)
+  html += '<div style="display:flex;border-bottom:1px solid #ddd;padding-bottom:4px;margin-bottom:8px;white-space:nowrap">';
+  html += '<div style="width:200px;min-width:200px;font-size:10px;color:#888"></div>';
+  html += '<div style="flex:1;position:relative;height:40px;overflow:hidden">';
+  
+  var curD = new Date(iniG);
+  while (curD <= finG) {
+    var sd = Math.round((curD - iniG) / 86400000);
+    var leftPx = (sd * DW);
+    var dNum = curD.getDate();
+    var dw = curD.getDay();
+    var fest = getFest(curD.getFullYear())[iso(curD)];
+    var isWeekend = (dw === 0 || dw === 6);
+    var isMonthStart = dNum === 1;
+    var bg, col, border;
+    if (fest) {
+      bg = '#fde8e8';
+      col = '#922b21';
+      border = isMonthStart ? '3px solid #1a3a5c' : '1px solid #f5b7b1';
+    } else if (isWeekend) {
+      bg = '#d5d8dc';
+      col = '#555';
+      border = isMonthStart ? '3px solid #1a3a5c' : '1px solid #bdc3c7';
+    } else {
+      bg = '#fff';
+      col = '#333';
+      border = isMonthStart ? '3px solid #1a3a5c' : '1px solid #e4eaf2';
+    }
+    var diasSemana = ['', 'L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    html += '<div style="position:absolute;left:' + leftPx + 'px;width:' + DW + 'px;text-align:center;font-size:12px;color:' + col + ';background:' + bg + ';border-right:' + border + ';box-sizing:border-box;height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:' + (dNum === 1 ? 'bold' : 'normal') + '"><span style="font-size:10px;font-weight:bold">' + diasSemana[dw] + '</span><span>' + dNum + '</span></div>';
+    curD = new Date(curD.getTime() + 86400000);
+  }
+  html += '</div>';
+  html += '</div>';
+  
+  // Lineas de cursos
+  _org.forEach(function(d) {
+    var sd = Math.round((new Date(d.ini) - iniG) / 86400000);
+    var ed = Math.round((new Date(d.fin) - iniG) / 86400000);
+    
+    // Filtrar teóricas y PRL de este curso
+    var dTeo = te.filter(function(t) { return t.curso === d.c.codigo; });
+    var dPrl = pl.filter(function(p) { return p.curso === d.c.codigo; });
+    
+    html += '<div style="display:flex;align-items:stretch;border-bottom:1px solid #e8eef4;min-height:60px;white-space:nowrap">';
+    html += '<div style="width:200px;min-width:200px;padding:8px 10px;font-size:12px;line-height:1.4;background:#f4f7fb;border-right:3px solid ' + d.bg + '">';
+    html += '<strong style="color:var(--pri)">' + d.lbl + '</strong><br>';
+    html += '<span style="color:var(--mut);font-size:11px">' + turnoLbl(d.turno) + '</span><br>';
+    html += '<span style="color:#888;font-size:10px">' + d.sess.length + ' días · ' + d.c.horas_totales + 'h</span>';
+    if (dTeo.length || dPrl.length) {
+      html += '<br><span style="font-size:10px">';
+      if (dTeo.length) html += '<span style="color:#c9a700">● ' + dTeo.length + ' teo</span> ';
+      if (dPrl.length) html += '<span style="color:#e67e22">● ' + dPrl.length + ' prl</span>';
+      html += '</span>';
+    }
+    html += '</div>';
+    html += '<div style="flex:1;position:relative;background:#fafcff;min-height:60px;overflow:hidden">';
+    
+    // Fondo con dias laborables/festivos
+    var curBg = new Date(iniG);
+    while (curBg <= finG) {
+      var bgSd = Math.round((curBg - iniG) / 86400000);
+      var bgL = (bgSd * DW);
+      var bgDw = curBg.getDay();
+      var bgFest = getFest(curBg.getFullYear())[iso(curBg)];
+      var isBgWeekend = (bgDw === 0 || bgDw === 6);
+      var bgCol, bgBorder;
+      if (bgFest) {
+        bgCol = 'rgba(253,232,232,0.7)';
+        bgBorder = '1px solid rgba(245,180,177,0.5)';
+      } else if (isBgWeekend) {
+        bgCol = 'rgba(213,216,220,0.5)';
+        bgBorder = '1px solid rgba(189,195,199,0.3)';
+      } else {
+        bgCol = 'transparent';
+        bgBorder = 'none';
+      }
+      html += '<div style="position:absolute;left:' + bgL + 'px;width:' + DW + 'px;top:0;bottom:0;background:' + bgCol + ';border-right:' + bgBorder + ';pointer-events:none;z-index:0"></div>';
+      curBg = new Date(curBg.getTime() + 86400000);
+    }
+    
+    // Líneas de inicio de mes (más visibles)
+    var curM2 = new Date(iniG.getFullYear(), iniG.getMonth(), 1);
+    while (curM2 <= finG) {
+      var ms = Math.round((curM2 - iniG) / 86400000);
+      var ml = (ms * DW);
+      html += '<div style="position:absolute;left:' + ml + 'px;top:0;bottom:0;border-left:2px solid #1a3a5c;pointer-events:none;z-index:1"></div>';
+      curM2 = new Date(curM2.getFullYear(), curM2.getMonth() + 1, 1);
+    }
+    
+    // Marcadores de teóricas
+    dTeo.forEach(function(t) {
+      var tSd = Math.round((new Date(t.fecha) - iniG) / 86400000);
+      var tL = (tSd * DW + DW / 2 - 4);
+      html += '<div title="TEÓRICA: ' + t.desc + ' (' + t.horas + 'h)\n' + esES(t.fecha) + (t.docente ? '\nDocente: ' + t.docente : '') + '" style="position:absolute;left:' + tL + 'px;top:6px;width:8px;height:16px;background:#c9a700;border-radius:2px;z-index:2;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>';
+    });
+    
+    // Marcadores de PRL
+    dPrl.forEach(function(p) {
+      var pSd = Math.round((new Date(p.fecha) - iniG) / 86400000);
+      var pL = (pSd * DW + DW / 2 - 4);
+      html += '<div title="PRL: ' + p.modulo + ' (' + p.horas + 'h)\n' + esES(p.fecha) + (p.docente ? '\nDocente: ' + p.docente : '') + '" style="position:absolute;left:' + pL + 'px;top:32px;width:8px;height:16px;background:#e67e22;border-radius:2px;z-index:2;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>';
+    });
+    
+    // Barra del curso
+    var barL = (sd * DW);
+    var barW = ((ed - sd + 1) * DW);
+    html += '<div title="' + d.lbl + '\n' + esES(iso(d.ini)) + ' → ' + esES(iso(d.fin)) + '\n' + d.sess.length + ' días lectivos" style="position:absolute;left:' + barL + 'px;width:' + barW + 'px;top:16px;height:30px;background:' + d.bg + ';border-radius:4px;box-shadow:0 2px 5px rgba(0,0,0,.15);z-index:2;cursor:default;border:1px solid rgba(0,0,0,.1)">';
+    html += '<span style="font-size:11px;font-weight:bold;color:' + d.fg + ';padding:0 6px;line-height:30px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">' + esES(iso(d.ini)) + ' → ' + esES(iso(d.fin)) + '</span>';
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+  });
+  
+  // Fila para teóricas y PRL generales
+  var teGen = te.filter(function(t) { return !t.curso; });
+  var plGen = pl.filter(function(p) { return !p.curso; });
+  if (teGen.length || plGen.length) {
+    html += '<div style="display:flex;align-items:stretch;border-bottom:1px solid #e8eef4;min-height:60px;background:#fffdf0;white-space:nowrap">';
+    html += '<div style="width:200px;min-width:200px;padding:8px 10px;font-size:12px;line-height:1.4;border-right:3px solid #c9a700">';
+    html += '<strong style="color:#7d6608">Teóricas/PRL Generales</strong><br>';
+    html += '<span style="color:#888;font-size:10px">Sin curso asignado</span>';
+    html += '</div>';
+    html += '<div style="flex:1;position:relative;background:#fffdf5;min-height:60px;overflow:hidden">';
+    
+    // Fondo con dias laborables/festivos
+    var curBgG = new Date(iniG);
+    while (curBgG <= finG) {
+      var bgSdG = Math.round((curBgG - iniG) / 86400000);
+      var bgLG = (bgSdG * DW);
+      var bgDwG = curBgG.getDay();
+      var bgFestG = getFest(curBgG.getFullYear())[iso(curBgG)];
+      var isBgWeekendG = (bgDwG === 0 || bgDwG === 6);
+      var bgColG, bgBorderG;
+      if (bgFestG) {
+        bgColG = 'rgba(253,232,232,0.7)';
+        bgBorderG = '1px solid rgba(245,180,177,0.5)';
+      } else if (isBgWeekendG) {
+        bgColG = 'rgba(213,216,220,0.5)';
+        bgBorderG = '1px solid rgba(189,195,199,0.3)';
+      } else {
+        bgColG = 'transparent';
+        bgBorderG = 'none';
+      }
+      html += '<div style="position:absolute;left:' + bgLG + 'px;width:' + DW + 'px;top:0;bottom:0;background:' + bgColG + ';border-right:' + bgBorderG + ';pointer-events:none;z-index:0"></div>';
+      curBgG = new Date(curBgG.getTime() + 86400000);
+    }
+    
+    teGen.forEach(function(t) {
+      var tSd = Math.round((new Date(t.fecha) - iniG) / 86400000);
+      var tL = (tSd * DW + DW / 2 - 4);
+      html += '<div title="TEÓRICA: ' + t.desc + ' (' + t.horas + 'h)\n' + esES(t.fecha) + (t.docente ? '\nDocente: ' + t.docente : '') + '" style="position:absolute;left:' + tL + 'px;top:6px;width:8px;height:16px;background:#c9a700;border-radius:2px;z-index:2;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>';
+    });
+    
+    plGen.forEach(function(p) {
+      var pSd = Math.round((new Date(p.fecha) - iniG) / 86400000);
+      var pL = (pSd * DW + DW / 2 - 4);
+      html += '<div title="PRL: ' + p.modulo + ' (' + p.horas + 'h)\n' + esES(p.fecha) + (p.docente ? '\nDocente: ' + p.docente : '') + '" style="position:absolute;left:' + pL + 'px;top:32px;width:8px;height:16px;background:#e67e22;border-radius:2px;z-index:2;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>';
+    });
+    
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+  }
+   
+   // Fondo con dias laborables, festivos y fines de semana
+  html += '<div style="margin-top:15px;padding:10px;background:#f4f7fb;border-radius:5px">';
+  html += '<div style="font-weight:bold;color:var(--pri);margin-bottom:8px;font-size:12px">Calendario:</div>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:15px;font-size:11px">';
+  
+  // Laborables
+  html += '<div style="display:flex;align-items:center;gap:6px">';
+  html += '<div style="width:20px;height:20px;background:#f8fff8;border:1px solid #e4eaf2;border-radius:3px"></div>';
+  html += '<span>Día laborable</span>';
+  html += '</div>';
+  
+  // Festivos
+  html += '<div style="display:flex;align-items:center;gap:6px">';
+  html += '<div style="width:20px;height:20px;background:#fde8e8;border:1px solid #f5b7b1;border-radius:3px"></div>';
+  html += '<span>Festivo</span>';
+  html += '</div>';
+  
+  // Fines de semana
+  html += '<div style="display:flex;align-items:center;gap:6px">';
+  html += '<div style="width:20px;height:20px;background:#e8ecf2;border:1px solid #d0d5dc;border-radius:3px"></div>';
+  html += '<span>Fin de semana</span>';
+  html += '</div>';
+  
+  // Teórica
+  html += '<div style="display:flex;align-items:center;gap:6px">';
+  html += '<div style="width:20px;height:20px;background:#c9a700;border-radius:3px"></div>';
+  html += '<span>Teórica</span>';
+  html += '</div>';
+  
+  // PRL
+  html += '<div style="display:flex;align-items:center;gap:6px">';
+  html += '<div style="width:20px;height:20px;background:#e67e22;border-radius:3px"></div>';
+  html += '<span>PRL</span>';
+  html += '</div>';
+  
+  // Inicio de mes
+  html += '<div style="display:flex;align-items:center;gap:6px">';
+  html += '<div style="width:20px;height:20px;background:#1a3a5c;border-radius:3px"></div>';
+  html += '<span>Inicio de mes</span>';
+  html += '</div>';
+  html += '</div>';
+  html += '</div>';
+  
+  // Leyenda de cursos
+  html += '<div style="display:flex;flex-wrap:wrap;gap:12px;padding:12px 0 4px;font-size:11px;color:var(--mut);border-top:1px solid #e8eef4;margin-top:10px">';
+  html += '<strong style="color:var(--pri)">Cursos:</strong>';
+  _org.forEach(function(d) {
+    html += '<span style="display:flex;align-items:center;gap:4px"><span style="width:13px;height:13px;border-radius:3px;background:' + d.bg + ';display:inline-block;border:1px solid rgba(0,0,0,.15)"></span>' + d.lbl + '</span>';
+  });
+  html += '</div>';
+  
+  // Rango de fechas
+  html += '<div style="margin-top:10px;font-size:10px;color:#888">';
+  html += 'Rango: ' + esES(iso(iniG)) + ' → ' + esES(iso(finG)) + ' (' + totalDays + ' días naturales)';
+  html += '</div>';
+  
+  html += '</div>';
+  html += '</div>';
+  div.innerHTML = html;
+}
+
+// Entidad
+function cambiarEntidad() {
+  var t = G('ent-tipo').value;
+  G('ent-otro-wrap').style.display = t === 'otro' ? '' : 'none';
+  guardarEntidad();
+}
+
+function guardarEntidad() {
+  var t = G('ent-tipo').value;
+  var o = (G('ent-otro').value || '').trim();
+  ls.s(K.en, { tipo: t, otro: o });
+  actualizarEntidadDisplay();
+}
+
+function actualizarEntidadDisplay() {
+  var en = getEn();
+  var nombre = en.tipo === 'otro' ? (en.otro || '') : (en.tipo || '');
+  var d = G('ent-display');
+  if (nombre) {
+    d.style.display = '';
+    d.textContent = nombre;
+  } else {
+    d.style.display = 'none';
+    d.textContent = '';
+  }
+}
+
+function initEntidad() {
+  var en = getEn();
+  if (G('ent-tipo')) G('ent-tipo').value = en.tipo || '';
+  if (G('ent-otro')) G('ent-otro').value = en.otro || '';
+  if (en.tipo === 'otro' && G('ent-otro-wrap')) G('ent-otro-wrap').style.display = '';
+  actualizarEntidadDisplay();
+}
+
+// Docentes
+var _iDoc = null, _fDoc = null;
+var ESPEC_LABELS = { soldadura: 'Soldadura', tuberia: 'Tuberías', mecanica: 'Mecánica', electricidad: 'Electricidad', electronica: 'Electrónica', teoria: 'Teoría General', prl: 'PRL / Seguridad', general: 'General' };
+
+function renderDocentes() {
+  var tb = G('tbody-docentes');
+  if (!tb) return;
+  tb.innerHTML = '';
+  var dc = getDc();
+  dc.forEach(function(d, i) {
+    var tr = document.createElement('tr');
+    if (i === _fDoc) tr.className = 'sel';
+    tr.innerHTML = '<td>' + d.nombre + '</td><td>' + (d.dni || '') + '</td><td>' + ESPEC_LABELS[d.espec] + '</td><td>' + (d.tel || '') + '</td><td>' + (d.email || '') + '</td>';
+    tr.onclick = function() { _fDoc = i; renderDocentes(); };
+    tb.appendChild(tr);
+  });
+}
+
+function guardarDocente() {
+  var nombre = G('doc-nombre').value.trim();
+  if (!nombre) { alert('El nombre es obligatorio.'); return; }
+  var dni = G('doc-dni').value.trim();
+  var espec = G('doc-espec').value;
+  var tel = G('doc-tel').value.trim();
+  var email = G('doc-email').value.trim();
+  var notas = G('doc-notas').value.trim();
+  var dc = getDc();
+  if (_iDoc !== null) {
+    dc[_iDoc] = { nombre: nombre, dni: dni, espec: espec, tel: tel, email: email, notas: notas };
+  } else {
+    dc.push({ nombre: nombre, dni: dni, espec: espec, tel: tel, email: email, notas: notas });
+  }
+  ls.s(K.dc, dc);
+  _iDoc = null;
+  G('doc-nombre').value = '';
+  G('doc-dni').value = '';
+  G('doc-espec').value = 'soldadura';
+  G('doc-tel').value = '';
+  G('doc-email').value = '';
+  G('doc-notas').value = '';
+  renderDocentes();
+  selDocentes();
+  showAlert('alert-doc', 'Docente guardado.', 'ok');
+}
+
+function editarDocenteSel() {
+  if (_fDoc === null) { alert('Selecciona un docente.'); return; }
+  var d = getDc()[_fDoc];
+  _iDoc = _fDoc;
+  G('doc-nombre').value = d.nombre || '';
+  G('doc-dni').value = d.dni || '';
+  G('doc-espec').value = d.espec || 'general';
+  G('doc-tel').value = d.tel || '';
+  G('doc-email').value = d.email || '';
+  G('doc-notas').value = d.notas || '';
+  showAlert('alert-doc', 'Editando: ' + d.nombre, 'err');
+}
+
+function eliminarDocenteSel() {
+  if (_fDoc === null) { alert('Selecciona un docente.'); return; }
+  var dc = getDc();
+  dc.splice(_fDoc, 1);
+  ls.s(K.dc, dc);
+  _fDoc = null;
+  _iDoc = null;
+  G('doc-nombre').value = '';
+  G('doc-dni').value = '';
+  G('doc-espec').value = 'soldadura';
+  G('doc-tel').value = '';
+  G('doc-email').value = '';
+  G('doc-notas').value = '';
+  renderDocentes();
+  selDocentes();
+  showAlert('alert-doc', 'Docente eliminado.', 'ok');
+}
+
+function selDocentes() {
+  var ids = ['mc-doc-teo', 'mc-doc-tal', 'mc-doc-prl', 'mp-doc-teo', 'mp-doc-pra', 'mp-doc-seg', 't-docente', 'prl-docente'];
+  ids.forEach(function(id) {
+    var s = G(id);
+    if (!s) return;
+    var v = s.value;
+    var opts = s.querySelectorAll('option');
+    var isCustom = opts.length <= 1 || (v && ![].slice.call(opts).some(function(o) { return o.value === v; }));
+    s.innerHTML = '';
+    var ph = document.createElement('option');
+    ph.value = '';
+    ph.textContent = '— No asignado —';
+    s.appendChild(ph);
+    var ph2 = document.createElement('option');
+    ph2.value = '__custom__';
+    ph2.textContent = 'Otro (escribir)...';
+    s.appendChild(ph2);
+    getDc().forEach(function(d) {
+      var o = document.createElement('option');
+      o.value = d.nombre;
+      o.textContent = d.nombre + ' (' + ESPEC_LABELS[d.espec] + ')';
+      s.appendChild(o);
+    });
+    if (isCustom && v) {
+      s.value = '__custom__';
+      var inp = s.nextElementSibling;
+      if (inp && inp.dataset.custom === '1') inp.value = v;
+    } else {
+      s.value = v;
+    }
+  });
+}
+
+function handleCustomDoc(select, customId) {
+  var inp = G(customId);
+  if (!inp) return;
+  if (select.value === '__custom__') {
+    inp.style.display = '';
+    inp.focus();
+  } else {
+    inp.style.display = 'none';
+    inp.value = '';
+  }
+}
+
+function initDocentes() {
+  selDocentes();
+  renderDocentes();
+}
+
+// Inicialización
+var CURSOS_DEFAULT = [
+  { codigo: 'FMEC17EXP', nombre: 'Soldadura Básica Nivel 1', area: 'Soldadura', horas_totales: 200, horas_diarias: 7, tipo: 'Programa Formativo' },
+  { codigo: 'FMEC0219', nombre: 'Soldadura TIG (Cert. Prof.)', area: 'Soldadura', horas_totales: 410, horas_diarias: 7, tipo: 'Certificado de Profesionalidad' },
+  { codigo: 'FMEC0319', nombre: 'Soldadura Smaw (Cert. Prof.)', area: 'Soldadura', horas_totales: 410, horas_diarias: 7, tipo: 'Certificado de Profesionalidad' },
+  { codigo: 'FMEC0015', nombre: 'Soldadura TIG (Prog. Form.)', area: 'Soldadura', horas_totales: 390, horas_diarias: 7, tipo: 'Programa Formativo' },
+  { codigo: 'FMEC0021', nombre: 'Soldadura Mantenimiento', area: 'Soldadura', horas_totales: 380, horas_diarias: 7, tipo: 'Programa Formativo' },
+  { codigo: 'FMEC0018', nombre: 'Tubería Nivel 1', area: 'Tuberías', horas_totales: 282, horas_diarias: 7, tipo: 'Programa Formativo' },
+  { codigo: 'FMEC0009', nombre: 'Calderero Tubero', area: 'Tuberías', horas_totales: 368, horas_diarias: 7, tipo: 'Programa Formativo' },
+  { codigo: 'FMEC0108', nombre: 'Fab. y Montaje Tuberías (Cert. Prof.)', area: 'Tuberías', horas_totales: 450, horas_diarias: 7, tipo: 'Certificado de Profesionalidad' }
+];
+
+if (!getCu().length) ls.s(K.cu, CURSOS_DEFAULT);
+if (G('mp-inicio')) G('mp-inicio').value = HOY;
+if (G('t-fecha')) G('t-fecha').value = HOY;
+if (G('prl-fecha')) G('prl-fecha').value = HOY;
+renderListaProg();
+renderCursos();
+initEntidad();
+initDocentes();
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    G('modal-prog').classList.remove('open');
+    G('modal-curso').classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>

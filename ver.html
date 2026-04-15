@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organizador Cursos — MEISA (Solo lectura)</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{--pri:#1a3a5c;--sec:#2471a3;--acc:#c0392b;--ok:#1e8449;--warn:#d4800a;
+ --bg:#eef2f7;--card:#fff;--txt:#1c2833;--mut:#717d7e;
+ --green:#a9dfbf;--red:#f5b7b1;--grey:#d5d8dc;--blue:#d6eaf8;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(--txt)}
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+header{background:var(--pri);color:#fff;padding:10px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+header h1{font-size:14px;font-weight:bold}
+header small{font-size:10px;color:#aed6f1;margin-left:auto}
+header .readonly-badge{background:#d5f5e3;color:#145a32;padding:3px 10px;border-radius:12px;font-size:10px;font-weight:bold;margin-left:10px}
+.tabs{display:flex;background:#142d47;flex-shrink:0;overflow-x:auto}
+.tab{padding:9px 16px;color:rgba(255,255,255,.6);cursor:pointer;font-size:12px;white-space:nowrap;border:none;background:none;border-bottom:3px solid transparent;transition:.15s}
+.tab:hover{color:#fff;background:rgba(255,255,255,.07)}
+.tab.active{color:#fff;border-bottom:3px solid #5dade2;font-weight:bold}
+.panels{flex:1;overflow:hidden;display:flex}
+.panel{display:none;flex:1;overflow:auto;padding:10px;gap:8px;flex-direction:column}
+.panel.active{display:flex}
+.card{background:var(--card);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:13px}
+.card-title{font-weight:bold;color:var(--pri);font-size:13px;margin-bottom:9px}
+label{display:block;font-size:11px;color:var(--mut);margin-bottom:2px;font-weight:bold;text-transform:uppercase;letter-spacing:.3px;margin-top:8px}
+input,select,textarea{width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:5px;font-size:12px}
+input:disabled,select:disabled,textarea:disabled{background:#f5f5f5;color:#888;cursor:not-allowed}
+.row{display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap}
+.row>*{flex:1;min-width:80px}
+table.data{width:100%;border-collapse:collapse;font-size:12px}
+table.data th{background:var(--pri);color:#fff;padding:7px 9px;text-align:left}
+table.data td{padding:6px 9px;border-bottom:1px solid #eaeff5}
+table.data tr:hover td{background:#f4f8ff}
+.calendarios{display:flex;flex-wrap:wrap;gap:9px}
+.mes{border:1px solid #c8d8e8;border-radius:8px;overflow:hidden;min-width:260px;box-shadow:0 1px 5px rgba(0,0,0,.08)}
+.mes-titulo{background:var(--pri);color:#fff;text-align:center;padding:6px 5px;font-weight:bold;font-size:12px;letter-spacing:.3px}
+.mes table{width:100%;border-collapse:collapse}
+.mes th{background:var(--blue);color:var(--pri);text-align:center;padding:5px 2px;font-size:11px;font-weight:bold}
+.mes td{text-align:center;padding:3px 2px;font-size:10px;border:1px solid #e8eef4;vertical-align:top;min-height:44px;width:14.28%}
+.mes td.finde{background:#f0f3f7;color:var(--mut)}
+.mes td.fest{background:#fde8e8;color:#922b21}
+.mes td.vacio{background:#fafafa;border:none}
+.mes td.hoy{outline:2px solid #e67e22;outline-offset:-2px;background:#fffbf2}
+.pill{display:block;border-radius:4px;font-size:9px;font-weight:bold;padding:2px 4px;margin:1px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default;line-height:1.3}
+.leyenda{display:flex;gap:12px;flex-wrap:wrap;padding:6px 0;font-size:11px;color:var(--mut)}
+.leyenda span{display:flex;align-items:center;gap:5px}
+.cuad{width:12px;height:12px;border-radius:2px;display:inline-block;border:1px solid rgba(0,0,0,.12)}
+.scroll{overflow:auto;flex:1}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:bold}
+.prog-row{display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;border:2px solid #e0e0e0;margin-bottom:5px;background:#fdfdfd}
+.prog-row .dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:2px solid rgba(0,0,0,.15)}
+.prog-row .txt{flex:1;font-size:11px;line-height:1.4}
+ .info{background:#eaf4fb;border:1px solid #aed6f1;border-radius:5px;padding:7px 11px;font-size:11px;color:var(--sec)}
+ @media (max-width:768px){
+ #app{height:auto;min-height:100vh;overflow:auto}
+ header{padding:8px 12px;flex-wrap:wrap}
+ header h1{font-size:12px}
+ header small,header .readonly-badge{display:none}
+ .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+ .tab{padding:8px 12px;font-size:11px}
+ .panels{flex-direction:column;overflow:visible}
+ .panel{padding:8px;overflow:visible}
+ #tab-org>div:first-child{flex-direction:column}
+ #tab-org>div:first-child>div:first-child{width:100%}
+ #tab-org>div:first-child>div:last-child{min-height:300px}
+ #tab-teoricas>div,#tab-prl>div{flex-direction:column}
+ #tab-teoricas>div>div:first-child,#tab-prl>div>div:first-child{width:100%}
+ #tab-teoricas>div>div:last-child,#tab-prl>div>div:last-child{flex:1}
+ #tab-docentes>div{flex-direction:column}
+ #tab-docentes>div>div:first-child{width:100%}
+ #tab-docentes>div>div:last-child{flex:1}
+ .card{padding:10px}
+ .calendarios{overflow-x:auto;flex-wrap:nowrap;padding-bottom:10px;-webkit-overflow-scrolling:touch}
+ .mes{min-width:280px;flex-shrink:0}
+ .mes td{min-width:40px;font-size:9px;padding:2px}
+ .prog-row{flex-wrap:wrap}
+ .prog-row .txt{width:calc(100% - 30px)}
+ .row{flex-direction:column}
+ .row>*{min-width:100%}
+ table.data{font-size:11px}
+ table.data th,table.data td{padding:5px 6px}
+ }
+ @media (max-width:480px){
+ header h1{font-size:11px}
+ .tab{padding:6px 10px;font-size:10px}
+ .card-title{font-size:12px}
+ .scroll{max-height:250px}
+ .mes{min-width:260px}
+ .mes td{font-size:8px;padding:1px}
+ .mes th{font-size:9px;padding:3px 1px}
+ }
+ </style>
+</head>
+<body>
+<div id="app">
+ <header>
+ <h1>Organizador de Cursos — MEISA Formacion Los Barrios (Cadiz)</h1>
+ <span class="readonly-badge">SOLO LECTURA</span>
+ <small>Festivos: nacionales + Andalucia + Cadiz capital</small>
+ </header>
+ <div class="tabs">
+ <button class="tab active" onclick="showTab('org')">Organigrama</button>
+ <button class="tab" onclick="showTab('cursos')">Cursos</button>
+ <button class="tab" onclick="showTab('teoricas')">Clases Teoricas</button>
+ <button class="tab" onclick="showTab('prl')">PRL</button>
+ <button class="tab" onclick="showTab('gantt')">Gantt</button>
+ <button class="tab" onclick="showTab('festivos')">Festivos</button>
+ <button class="tab" onclick="showTab('docentes')">Docentes</button>
+ </div>
+ <div class="panels">
+
+ <!-- ORGANIGRAMA -->
+ <div id="tab-org" class="panel active">
+ <div style="display:flex;gap:9px;flex:1;overflow:hidden;min-height:0">
+ <div style="width:290px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;overflow-y:auto">
+ <div class="card">
+ <div class="card-title">Entidad Financiadora</div>
+ <div id="ent-display" style="font-size:12px;color:var(--ok);font-weight:bold"></div>
+ </div>
+ <div class="card">
+ <div class="card-title">Cursos programados</div>
+ <div id="lista-prog"><p style="color:var(--mut);font-size:11px;text-align:center;padding:8px">Sin cursos programados</p></div>
+ </div>
+ <div class="card">
+ <button id="btn-html" class="btn" style="width:100%;margin-bottom:5px;background:var(--sec);color:#fff;padding:6px 13px;border:none;border-radius:5px;cursor:pointer" disabled onclick="exportarHTML()">Exportar HTML / PDF</button>
+ <button id="btn-excel" class="btn" style="width:100%;background:#217346;color:#fff;padding:6px 13px;border:none;border-radius:5px;cursor:pointer" disabled onclick="exportarExcel()">Exportar Excel completo</button>
+ </div>
+ <div class="card" id="resumen-org" style="display:none">
+ <div class="card-title">Resumen</div>
+ <div id="fichas-resumen"></div>
+ </div>
+ </div>
+ <div class="card scroll" style="flex:1;min-width:0">
+ <div id="cal-org" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--mut);font-size:13px">
+ Genera el organigrama en la version de edicion para visualizarlo aqui.
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <!-- CURSOS -->
+ <div id="tab-cursos" class="panel">
+ <div class="card" style="flex:1;display:flex;flex-direction:column;gap:8px">
+ <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+ <div class="card-title" style="margin:0">Catalogo de Cursos</div>
+ </div>
+ <div class="info">Vista de solo lectura. Edita los cursos en la version principal.</div>
+ <div class="scroll">
+ <table class="data"><thead><tr><th>Codigo</th><th>Nombre</th><th>Area</th><th>H. Tot.</th><th>H./Dia</th><th>Tipo</th><th>Entidad</th><th>Docentes</th></tr></thead>
+ <tbody id="tbody-cursos"></tbody></table>
+ </div>
+ </div>
+ </div>
+
+ <!-- TEORICAS -->
+ <div id="tab-teoricas" class="panel">
+ <div style="display:flex;gap:9px;flex:1;overflow:hidden;min-height:0">
+ <div style="width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;overflow-y:auto">
+ <div class="card">
+ <div class="card-title">Resumen Clases Teoricas</div>
+ <div id="t-total" style="font-size:11px;color:var(--mut)"></div>
+ </div>
+ </div>
+ <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;overflow:hidden">
+ <div class="card" style="flex-shrink:0">
+ <div class="card-title" style="margin:0">Clases teoras programadas</div>
+ <div style="max-height:160px;overflow-y:auto">
+ <table class="data"><thead><tr><th>Fecha</th><th>Dia</th><th>Curso</th><th>Descripcion</th><th>H.</th></tr></thead>
+ <tbody id="tbody-teoricas"></tbody></table>
+ </div>
+ </div>
+ <div class="card scroll" style="flex:1">
+ <div class="card-title">Calendario — Clases Teoricas</div>
+ <div id="cal-teorica"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <!-- PRL -->
+ <div id="tab-prl" class="panel">
+ <div style="display:flex;gap:9px;flex:1;overflow:hidden;min-height:0">
+ <div style="width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;overflow-y:auto">
+ <div class="card">
+ <div class="card-title">Resumen PRL</div>
+ <div id="prl-stats" style="font-size:11px;color:var(--mut)">Sin sesiones.</div>
+ </div>
+ </div>
+ <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;overflow:hidden">
+ <div class="card" style="flex-shrink:0">
+ <div class="card-title" style="margin:0">Sesiones PRL programadas</div>
+ <div style="max-height:160px;overflow-y:auto">
+ <table class="data"><thead><tr><th>Fecha</th><th>Dia</th><th>Modulo</th><th>H.</th><th>Curso</th></tr></thead>
+ <tbody id="tbody-prl"></tbody></table>
+ </div>
+ </div>
+ <div class="card scroll" style="flex:1">
+ <div class="card-title">Calendario — PRL</div>
+ <div id="cal-prl"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <!-- GANTT -->
+ <div id="tab-gantt" class="panel">
+ <div class="card" style="flex-shrink:0">
+ <div class="card-title" style="margin:0">Diagrama de Gantt</div>
+ </div>
+ <div class="card scroll" style="flex:1">
+ <div id="gantt-content" style="min-width:600px">
+ <p style="color:var(--mut);padding:20px;text-align:center">Genera el organigrama en la version de edicion.</p>
+ </div>
+ </div>
+ </div>
+
+ <!-- FESTIVOS -->
+ <div id="tab-festivos" class="panel">
+ <div class="card" style="flex:1;display:flex;flex-direction:column;gap:8px">
+ <div class="card-title" style="margin:0">Festivos — Calendario Laboral Cadiz</div>
+ <div class="scroll">
+ <table class="data"><thead><tr><th>Fecha</th><th>Descripcion</th><th>Tipo</th></tr></thead>
+ <tbody id="tbody-fest"></tbody></table>
+ </div>
+ </div>
+ </div>
+
+ <!-- DOCENTES -->
+ <div id="tab-docentes" class="panel">
+ <div style="display:flex;gap:9px;flex:1;overflow:hidden;min-height:0">
+ <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;overflow:hidden">
+ <div class="card">
+ <div class="card-title">Directorio de Docentes</div>
+ <div id="doc-stats" style="font-size:11px;color:var(--mut)"></div>
+ </div>
+ <div class="card scroll" style="flex:1">
+ <div class="card-title">Asignaciones vigentes</div>
+ <div id="doc-asignaciones" style="font-size:11px;line-height:1.7"></div>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ </div>
+</div>
+
+<script>
+const K={cu:'orgCursos_v2',ex:'orgExtras_v1',pr:'orgProgs_v2',te:'orgTeo_v1',pl:'orgPRL_v1',en:'orgEntidad_v1',dc:'orgDocentes_v1'};
+const ls={g:k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch{return null}},s:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+const getCu=()=>ls.g(K.cu)||[];const getEx=()=>ls.g(K.ex)||{};
+const getPr=()=>ls.g(K.pr)||[];const getTe=()=>ls.g(K.te)||[];const getPl=()=>ls.g(K.pl)||[];
+const getEn=()=>ls.g(K.en)||{tipo:'',otro:''};
+const getDc=()=>ls.g(K.dc)||[];
+function G(id){return document.getElementById(id);}
+function pascua(y){
+ const a=y%19,[b,c]=[Math.floor(y/100),y%100],[d,e]=[Math.floor(b/4),b%4];
+ const f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30;
+ const [i,k]=[Math.floor(c/4),c%4],l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451);
+ return new Date(y,Math.floor((h+l-7*m+114)/31)-1,(h+l-7*m+114)%31+1);
+}
+function addD(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function iso(d){return d instanceof Date?d.toISOString().slice(0,10):String(d);}
+function esES(s){return s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4);}
+const MESES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DC=['L','M','X','J','V','S','D'];
+const DN=['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
+const HOY=iso(new Date());
+const FC={};
+function festivos(y,ex={}){
+ const h={},add=(d,n)=>h[iso(d)]=n;
+ [[0,1,'Anio Nuevo'],[0,6,'Reyes Magos'],[4,1,'Dia del Trabajador'],[7,15,'Asuncion'],
+ [9,12,'Hispanidad'],[10,1,'Todos Santos'],[11,6,'Constitucion'],[11,8,'Inmaculada'],[11,25,'Navidad']]
+ .forEach(([m,d,n])=>add(new Date(y,m,d),n));
+ const p=pascua(y);add(addD(p,-3),'Jueves Santo');add(addD(p,-2),'Viernes Santo');
+ add(new Date(y,1,28),'Dia de Andalucia');
+ const lc=addD(p,-48);add(lc,'Lunes de Carnaval (Cadiz)');add(addD(lc,1),'Martes de Carnaval (Cadiz)');
+ add(new Date(y,4,15),'San Isidro Labrador (Los Barrios)');
+ const mateo=new Date(y,8,24),mDow=mateo.getDay();
+ const lFeria=addD(mateo,mDow===1?0:mDow===0?1:1-mDow);
+ add(lFeria,'Lunes de Feria — Los Barrios');
+ Object.entries(ex).forEach(([k,n])=>{if(k.startsWith(String(y)))h[k]=n;});
+ return h;
+}
+function getFest(y){if(!FC[y])FC[y]=festivos(y,getEx());return FC[y];}
+function esLab(d){const dw=new Date(d).getDay();if(dw===0||dw===6)return false;return!getFest(new Date(d).getFullYear())[iso(new Date(d))];}
+function calcOrg(inicio,tot,dia){
+ const n=Math.ceil(tot/dia);let cur=new Date(inicio);
+ while(!esLab(cur))cur=addD(cur,1);
+ const ini=new Date(cur),sess=[];
+ while(sess.length<n){if(esLab(cur))sess.push(new Date(cur));cur=addD(cur,1);}
+ return{ini,fin:sess[sess.length-1],sess};
+}
+function turnoH(t){return t.endsWith('7')?7:6;}
+function turnoLbl(t){return{m7:'Manana 7h (08-15)',t7:'Tarde 7h (15-22)',m6:'Manana 6h (08-14)',t6:'Tarde 6h (16-22)'}[t]||t;}
+function showTab(id){
+ document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['org','cursos','teoricas','prl','gantt','festivos','docentes'][i]===id));
+ document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+ G('tab-'+id).classList.add('active');
+ if(id==='cursos')renderCursos();
+ if(id==='teoricas'){renderTeorica();renderCalTeorica();}
+ if(id==='prl'){renderPRL();renderCalPRL();}
+ if(id==='gantt')renderGantt();
+ if(id==='festivos')renderFestivos();
+ if(id==='docentes')renderDocentes();
+}
+let _org=[];
+function renderListaProg(){
+ const div=G('lista-prog'),pr=getPr(),cu=getCu();
+ if(!pr.length){div.innerHTML='<p style="color:var(--mut);font-size:11px;text-align:center;padding:8px">Sin cursos programados</p>';return;}
+ div.innerHTML=pr.map((p,i)=>{const c=cu[p.idx]||{codigo:'?',nombre:'?',horas_totales:0};
+ let finStr='calculando...',nDias='';
+ try{const{fin,sess}=calcOrg(new Date(p.inicio),parseFloat(c.horas_totales),parseFloat(p.hdia));finStr=esES(iso(fin));nDias=sess.length+' dias lectivos';}catch(e){}
+ return '<div class="prog-row" style="border-color:'+p.bg+'">'
+ +'<div class="dot" style="background:'+p.bg+'"></div>'
+ +'<div class="txt"><strong style="color:var(--pri)">'+p.label+'</strong><br>'
+ +'<span style="color:var(--mut)">'+turnoLbl(p.turno)+'</span><br>'
+ +' <strong>'+esES(p.inicio)+'</strong> -> <strong>'+finStr+'</strong><br>'
+ +'<span style="font-size:10px;color:var(--mut)">'+c.horas_totales+'h totales - '+p.hdia+'h/dia - '+nDias+'</span>'
+ +(c.entidad?'<div style="margin-top:2px"><span class="badge" style="background:#d6eaf8;color:#1a5276;font-size:9px">'+c.entidad+'</span></div>':'')
+ +((p.docTeo||p.docPra||p.docSeg||c.docTeo||c.docTal||c.docPRL)?'<div style="font-size:10px;color:#2471a3;margin-top:3px;line-height:1.5">'+((p.docTeo||c.docTeo)?' '+(p.docTeo||c.docTeo)+'<br>':'')+((p.docPra||c.docTal)?' '+(p.docPra||c.docTal)+'<br>':'')+((p.docSeg||c.docPRL)?' '+(p.docSeg||c.docPRL):'')+'</div>':'')
+ +'</div>'
+ +'</div>';
+ }).join('');
+}
+function generarOrganigrama(){
+ const pr=getPr(),cu=getCu();if(!pr.length)return;
+ _org=[];
+ pr.forEach(p=>{const c=cu[p.idx];if(!c)return;
+ const{ini,fin,sess}=calcOrg(new Date(p.inicio),parseFloat(c.horas_totales),parseFloat(p.hdia));
+ _org.push({p,c,ini,fin,sess,ss:new Set(sess.map(s=>iso(s))),bg:p.bg,fg:p.fg,lbl:p.label||c.codigo,turno:p.turno});
+ });
+ G('btn-html').disabled=false;G('btn-excel').disabled=false;
+ G('resumen-org').style.display='';
+ G('fichas-resumen').innerHTML=_org.map(d=>{const teoF=d.p.docTeo||d.c.docTeo,talF=d.p.docPra||d.c.docTal,segF=d.p.docSeg||d.c.docPRL;return '<div style="border-left:4px solid '+d.bg+';padding:7px 10px;margin-bottom:6px;background:#f8f9fa;border-radius:5px;font-size:11px;line-height:1.6"><strong style="color:var(--pri)">'+d.lbl+'</strong>'+(d.c.entidad?' <span class="badge" style="background:#d6eaf8;color:#1a5276;font-size:9px">'+d.c.entidad+'</span>':'')+'<br><span style="color:var(--mut)">'+turnoLbl(d.turno)+'</span><br> '+esES(iso(d.ini))+' -> '+esES(iso(d.fin))+'<br> '+d.sess.length+' dias lectivos - '+d.c.horas_totales+'h totales'+(teoF||talF||segF?'<br><span style="font-size:10px;color:#2471a3">'+(teoF?' Teo: '+teoF+' ':'')+(talF?' Tal: '+talF+' ':'')+(segF?' PRL: '+segF:'')+'</span>':'')+'</div>';}).join('');
+ renderCalOrg();
+}
+function buildMes(y,m,orgData,tSet,prlSet){
+ if(!FC[y])FC[y]=festivos(y,getEx());
+ const fest=FC[y],dias=new Date(y,m,0).getDate(),pd=(new Date(y,m-1,1).getDay()+6)%7;
+ const wrap=document.createElement('div');wrap.className='mes';
+ let h='<div class="mes-titulo">'+MESES[m]+' '+y+'</div><table><thead><tr><th style="padding:3px;font-size:9px;background:var(--blue);color:var(--pri)">Dia</th><th style="background:var(--blue);color:var(--pri);padding:3px 4px;font-size:10px">Mañana</th><th style="background:var(--blue);color:var(--pri);padding:3px 4px;font-size:10px">Tarde</th><th style="background:var(--blue);color:var(--pri);padding:3px 4px;font-size:10px">Teorica / PRL</th></tr></thead><tbody>';
+ let dia=1;
+ while(dia<=dias){
+ h+='<tr>';
+ for(let c=0;c<4;c++){
+ if(dia===1&&pd>0&&c<pd){
+ h+='<td class="vacio" style="width:40px"></td><td class="vacio"></td><td class="vacio"></td><td class="vacio"></td>';
+ break;
+ }else if(dia>dias){
+ h+='<td class="vacio" style="width:40px"></td><td class="vacio"></td><td class="vacio"></td><td class="vacio"></td>';
+ break;
+ }else{
+ const isoD=y+'-'+String(m).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
+ const dw=(new Date(isoD).getDay()+6)%7;
+ let cls='';
+ if(c===0){
+ if(dw>=5)cls='finde';
+ if(fest[isoD])cls='fest';
+ h+='<td class="'+cls+'" style="font-weight:bold;font-size:12px;text-align:center;padding:4px'+(isoD===HOY?';background:#fffbf2':'')+'">'+dia+'</td>';
+ }else if(c===1){
+ if(fest[isoD])cls='fest';else if(dw>=5)cls='finde';
+ if(isoD===HOY)cls+=' hoy';
+ let mp='';
+ if(orgData)orgData.filter(d=>d.ss.has(isoD)&&d.turno.startsWith('m')).forEach(d=>{mp+='<span class="pill" style="background:'+d.bg+';color:'+d.fg+';border:1px solid rgba(0,0,0,.1);display:block;margin:1px 0;font-size:9px" title="'+d.lbl+' - '+turnoLbl(d.turno)+'">'+d.lbl.slice(0,12)+'</span>';});
+ h+='<td class="'+cls+'" style="padding:2px;vertical-align:top;min-width:60px'+(isoD===HOY?';background:#fffbf2':'')+'">'+mp+'</td>';
+ }else if(c===2){
+ if(fest[isoD])cls='fest';else if(dw>=5)cls='finde';
+ if(isoD===HOY)cls+=' hoy';
+ let tp='';
+ if(orgData)orgData.filter(d=>d.ss.has(isoD)&&d.turno.startsWith('t')).forEach(d=>{tp+='<span class="pill" style="background:'+d.bg+';color:'+d.fg+';border:1px solid rgba(0,0,0,.1);display:block;margin:1px 0;font-size:9px" title="'+d.lbl+' - '+turnoLbl(d.turno)+'">'+d.lbl.slice(0,12)+'</span>';});
+ h+='<td class="'+cls+'" style="padding:2px;vertical-align:top;min-width:60px'+(isoD===HOY?';background:#fffbf2':'')+'">'+tp+'</td>';
+ }else if(c===3){
+ if(fest[isoD])cls='fest';else if(dw>=5)cls='finde';
+ if(isoD===HOY)cls+=' hoy';
+ let ep='';
+ if(tSet&&tSet[isoD])tSet[isoD].forEach(t=>ep+='<span class="pill" style="background:#fef9e7;color:#7d6608;border:1px solid #f0c030;display:block;margin:1px 0;font-size:9px" title="'+(t.curso||'General')+' - '+t.desc+' ('+t.horas+'h)">T:'+t.horas+'h'+(t.curso?' '+t.curso.slice(0,7):'')+'</span>');
+ if(prlSet&&prlSet[isoD])prlSet[isoD].forEach(p=>ep+='<span class="pill" style="background:#f9e3c0;color:#784212;border:1px solid #e67e22;display:block;margin:1px 0;font-size:9px" title="'+(p.curso||'General')+' - '+p.modulo+' ('+p.horas+'h)">P:'+p.horas+'h'+(p.curso?' '+p.curso.slice(0,7):'')+'</span>');
+ h+='<td class="'+cls+'" style="padding:2px;vertical-align:top;min-width:60px'+(isoD===HOY?';background:#fffbf2':'')+'">'+ep+'</td>';
+ }
+ }
+ }
+ h+='</tr>';
+ dia++;
+ }
+ h+='</tbody></table>';wrap.innerHTML=h;return wrap;
+}
+function renderCalOrg(){
+ if(!_org.length)return;
+ const iniG=new Date(Math.min(..._org.map(d=>d.ini)));
+ const finG=new Date(Math.max(..._org.map(d=>d.fin)));
+ const te=getTe(),pl=getPl();
+ const tSet={};te.forEach(t=>{if(!tSet[t.fecha])tSet[t.fecha]=[];tSet[t.fecha].push(t);});
+ const pSet={};pl.forEach(p=>{if(!pSet[p.fecha])pSet[p.fecha]=[];pSet[p.fecha].push(p);});
+ const div=G('cal-org');div.removeAttribute('style');div.innerHTML='';
+ const cals=document.createElement('div');cals.className='calendarios';
+ let curM=new Date(iniG.getFullYear(),iniG.getMonth(),1);
+ const ulM=new Date(finG.getFullYear(),finG.getMonth(),1);
+ while(curM<=ulM){cals.appendChild(buildMes(curM.getFullYear(),curM.getMonth()+1,_org,tSet,pSet));curM=new Date(curM.getFullYear(),curM.getMonth()+1,1);}
+ div.appendChild(cals);
+ const ley=document.createElement('div');ley.className='leyenda';ley.style.cssText='margin-top:10px;padding:10px 12px;background:#fff;border-radius:7px;border:1px solid #e0e8f0;gap:14px;font-size:11px';
+ ley.innerHTML='<strong style="color:var(--pri);font-size:11px">Leyenda:</strong> '+_org.map(d=>'<span><span class="cuad" style="background:'+d.bg+';border:1px solid rgba(0,0,0,.15)"></span> '+d.lbl+'</span>').join('')+
+ '<span><span class="cuad" style="background:#fef9e7;border:1px solid #f0c030"></span> Teorica</span>'+
+ '<span><span class="cuad" style="background:#f9e3c0;border:1px solid #e67e22"></span> PRL</span>'+
+ '<span><span class="cuad" style="background:#fde8e8;border:1px solid #f5b7b1"></span> Festivo</span>'+
+ '<span><span class="cuad" style="background:#f0f3f7;border:1px solid #c0c8d0"></span> Fin de semana</span>';
+ div.appendChild(ley);
+}
+function exportarHTML(){
+ if(!_org.length)return;
+ const te=getTe(),pl=getPl();
+ const tSet={};te.forEach(t=>{if(!tSet[t.fecha])tSet[t.fecha]=[];tSet[t.fecha].push(t);});
+ const pSet={};pl.forEach(p=>{if(!pSet[p.fecha])pSet[p.fecha]=[];pSet[p.fecha].push(p);});
+ const iniG=new Date(Math.min(..._org.map(d=>d.ini)));
+ const finG=new Date(Math.max(..._org.map(d=>d.fin)));
+ let mH='';let curM=new Date(iniG.getFullYear(),iniG.getMonth(),1);
+ const ulM=new Date(finG.getFullYear(),finG.getMonth(),1);
+ while(curM<=ulM){
+ const y=curM.getFullYear(),m=curM.getMonth()+1;
+ getFest(y);const fest=FC[y];
+ const dias=new Date(y,m,0).getDate(),pd=(new Date(y,m-1,1).getDay()+6)%7;
+ let rows='';let dia=1;
+ while(dia<=dias){
+ rows+='<tr>';
+ for(let c=0;c<4;c++){
+ if(dia===1&&pd>0&&c<pd){
+ rows+='<td class="vacio"></td><td class="vacio"></td><td class="vacio"></td><td class="vacio"></td>';
+ break;
+ }else if(dia>dias){
+ rows+='<td class="vacio"></td><td class="vacio"></td><td class="vacio"></td><td class="vacio"></td>';
+ break;
+ }else{
+ const isoD=y+'-'+String(m).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
+ const dw=(new Date(isoD).getDay()+6)%7;
+ let cls='';
+ if(c===0){
+ if(dw>=5)cls='finde';
+ if(fest[isoD])cls='fest';
+ rows+='<td class="'+cls+'" style="font-weight:bold;padding:4px;text-align:center">'+dia+'</td>';
+ }else if(c===1){
+ if(fest[isoD])cls='fest';else if(dw>=5)cls='finde';
+ let mp='';_org.filter(d=>d.ss.has(isoD)&&d.turno.startsWith('m')).forEach(d=>{mp+='<span class="p" style="background:'+d.bg+';color:'+d.fg+'">'+d.lbl.slice(0,10)+'</span>';});
+ rows+='<td class="'+cls+'" style="padding:2px;vertical-align:top">'+mp+'</td>';
+ }else if(c===2){
+ if(fest[isoD])cls='fest';else if(dw>=5)cls='finde';
+ let tp='';_org.filter(d=>d.ss.has(isoD)&&d.turno.startsWith('t')).forEach(d=>{tp+='<span class="p" style="background:'+d.bg+';color:'+d.fg+'">'+d.lbl.slice(0,10)+'</span>';});
+ rows+='<td class="'+cls+'" style="padding:2px;vertical-align:top">'+tp+'</td>';
+ }else if(c===3){
+ if(fest[isoD])cls='fest';else if(dw>=5)cls='finde';
+ let ep='';
+ if(tSet[isoD])tSet[isoD].forEach(t=>ep+='<span class="p" style="background:#fef9e7;color:#7d6608">T:'+t.horas+'h</span>');
+ if(pSet[isoD])pSet[isoD].forEach(p=>ep+='<span class="p" style="background:#f9e3c0;color:#784212">P:'+p.horas+'h</span>');
+ rows+='<td class="'+cls+'" style="padding:2px;vertical-align:top">'+ep+'</td>';
+ }
+ }
+ }
+ rows+='</tr>';
+ dia++;
+ }
+ mH+='<div class="mes"><div class="mh">'+MESES[m]+' '+y+'</div><table><thead><tr><th style="padding:3px;font-size:9px">Dia</th><th style="padding:3px;font-size:9px">Manhana</th><th style="padding:3px;font-size:9px">Tarde</th><th style="padding:3px;font-size:9px">Teorica/PRL</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+ curM=new Date(y,m,1);
+ }
+ const lH=_org.map(d=>'<span><b style="background:'+d.bg+';color:'+d.fg+';padding:1px 5px;border-radius:3px">'+d.lbl+'</b> '+turnoLbl(d.turno)+'</span>').join('')+
+ '<span><b style="background:#fef9e7;padding:1px 5px;border-radius:3px"></b>Teorica</span><span><b style="background:#f9e3c0;padding:1px 5px;border-radius:3px"></b>PRL</span>';
+ const entidad=getEntidadNombre();
+ const docInfo=_org.map(d=>{const ds=[];const teoH=d.p.docTeo||d.c.docTeo,talH=d.p.docPra||d.c.docTal,segH=d.p.docSeg||d.c.docPRL;if(teoH)ds.push(' Teoria: '+teoH);if(talH)ds.push(' Taller: '+talH);if(segH)ds.push(' PRL: '+segH);return ds.length?'<tr><td style="padding:4px 8px;font-weight:bold;background:#eaf4fb;border:1px solid #aed6f1">'+d.lbl+(d.c.entidad?' <span style="font-size:8px;background:#d6eaf8;color:#1a5276;padding:1px 4px;border-radius:3px">'+d.c.entidad+'</span>':'')+'</td><td style="padding:4px 8px;border:1px solid #aed6f1">'+ds.join(' &nbsp;|&nbsp; ')+'</td></tr>':'';}).filter(Boolean).join('');
+ const docTable=docInfo?'<div style="margin:8px 0"><table style="font-size:9px;border-collapse:collapse;width:auto"><thead><tr><th style="padding:3px 8px;background:#1a3a5c;color:#fff;text-align:left;border:1px solid #1a3a5c">Curso</th><th style="padding:3px 8px;background:#1a3a5c;color:#fff;text-align:left;border:1px solid #1a3a5c">Docentes</th></tr></thead><tbody>'+docInfo+'</tbody></table></div>':'';
+ const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Organigrama MEISA</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px}@page{size:A3 landscape;margin:10mm}@media print{.np{display:none}}header{background:#1a3a5c;color:#fff;padding:10px 15px;margin-bottom:9px}header h1{font-size:13px}header p{font-size:9px;opacity:.75}header .ent{font-size:10px;background:rgba(255,255,255,.15);display:inline-block;padding:2px 8px;border-radius:3px;margin-top:3px}.meses{display:flex;flex-wrap:wrap;gap:10px}.mes{border:1px solid #ccc;border-radius:5px;overflow:hidden;min-width:320px;flex:1}.mh{background:#1a3a5c;color:#fff;text-align:center;padding:4px;font-weight:bold;font-size:10px}table{width:100%;border-collapse:collapse}th{background:#d6eaf8;color:#1a3a5c;text-align:center;padding:3px;font-size:9px}td{text-align:center;padding:2px;border:1px solid #eee;font-size:9px;vertical-align:top;min-width:50px}td b{display:block}.p{display:block;border-radius:2px;font-size:7px;padding:1px 2px;margin:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}td.fest{background:#f5b7b1;color:#922b21}td.finde{background:#d5d8dc;color:#999}td.vacio{background:#fafafa;border:none}.ley{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0;font-size:10px;align-items:center}.pie{font-size:9px;color:#999;margin-top:4px}</style></head><body><header><h1>ORGANIGRAMA - MEISA Formacion Los Barrios (Cadiz)</h1>'+(entidad!=='Sin especificar'?'<div class="ent"> Entidad financiadora: '+entidad+'</div>':'')+'<p>Festivos: nacionales + Andalucia + Cadiz capital | '+esES(HOY)+'</p></header>'+docTable+'<div class="meses">'+mH+'</div><div class="ley">'+lH+'</div><p class="pie">'+_org.map(d=>d.lbl+': '+esES(iso(d.ini))+' -> '+esES(iso(d.fin))+' ('+d.sess.length+' dias)').join(' | ')+'</p><div class="np" style="margin-top:10px"><button onclick="window.print()" style="padding:7px 16px;background:#1a3a5c;color:#fff;border:none;border-radius:5px;cursor:pointer">Imprimir / PDF</button></div></body></html>';
+ window.open(URL.createObjectURL(new Blob([html],{type:'text/html'})),'_blank');
+}
+ }
+ rows+='</tr>';if(dia>dias)break;
+ }
+ mH+='<div class="mes"><div class="mh">'+MESES[m]+' '+y+'</div><table><thead><tr><th style="padding:3px;font-size:9px">Dia</th><th style="padding:3px;font-size:9px">Mañana</th><th style="padding:3px;font-size:9px">Tarde</th><th style="padding:3px;font-size:9px">Teorica/PRL</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+ curM=new Date(y,m,1);
+ }
+ const lH=_org.map(d=>'<span><b style="background:'+d.bg+';color:'+d.fg+';padding:1px 5px;border-radius:3px">'+d.lbl+'</b> '+turnoLbl(d.turno)+'</span>').join('')+
+ '<span><b style="background:#fef9e7;padding:1px 5px;border-radius:3px"></b>Teorica</span><span><b style="background:#f9e3c0;padding:1px 5px;border-radius:3px"></b>PRL</span>';
+ const entidad=getEntidadNombre();
+ const docInfo=_org.map(d=>{const ds=[];const teoH=d.p.docTeo||d.c.docTeo,talH=d.p.docPra||d.c.docTal,segH=d.p.docSeg||d.c.docPRL;if(teoH)ds.push(' Teoria: '+teoH);if(talH)ds.push(' Taller: '+talH);if(segH)ds.push(' PRL: '+segH);return ds.length?'<tr><td style="padding:4px 8px;font-weight:bold;background:#eaf4fb;border:1px solid #aed6f1">'+d.lbl+(d.c.entidad?' <span style="font-size:8px;background:#d6eaf8;color:#1a5276;padding:1px 4px;border-radius:3px">'+d.c.entidad+'</span>':'')+'</td><td style="padding:4px 8px;border:1px solid #aed6f1">'+ds.join(' &nbsp;|&nbsp; ')+'</td></tr>':'';}).filter(Boolean).join('');
+ const docTable=docInfo?'<div style="margin:8px 0"><table style="font-size:9px;border-collapse:collapse;width:auto"><thead><tr><th style="padding:3px 8px;background:#1a3a5c;color:#fff;text-align:left;border:1px solid #1a3a5c">Curso</th><th style="padding:3px 8px;background:#1a3a5c;color:#fff;text-align:left;border:1px solid #1a3a5c">Docentes</th></tr></thead><tbody>'+docInfo+'</tbody></table></div>':'';
+ const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Organigrama MEISA</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px}@page{size:A3 landscape;margin:10mm}@media print{.np{display:none}}header{background:#1a3a5c;color:#fff;padding:10px 15px;margin-bottom:9px}header h1{font-size:13px}header p{font-size:9px;opacity:.75}header .ent{font-size:10px;background:rgba(255,255,255,.15);display:inline-block;padding:2px 8px;border-radius:3px;margin-top:3px}.meses{display:flex;flex-wrap:wrap;gap:10px}.mes{border:1px solid #ccc;border-radius:5px;overflow:hidden;min-width:320px;flex:1}.mh{background:#1a3a5c;color:#fff;text-align:center;padding:4px;font-weight:bold;font-size:10px}table{width:100%;border-collapse:collapse}th{background:#d6eaf8;color:#1a3a5c;text-align:center;padding:3px;font-size:9px}td{text-align:center;padding:2px;border:1px solid #eee;font-size:9px;vertical-align:top;min-width:50px}td b{display:block}.p{display:block;border-radius:2px;font-size:7px;padding:1px 2px;margin:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}td.fest{background:#f5b7b1;color:#922b21}td.finde{background:#d5d8dc;color:#999}td.vacio{background:#fafafa;border:none}.ley{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0;font-size:10px;align-items:center}.pie{font-size:9px;color:#999;margin-top:4px}</style></head><body><header><h1>ORGANIGRAMA - MEISA Formacion Los Barrios (Cadiz)</h1>'+(entidad!=='Sin especificar'?'<div class="ent"> Entidad financiadora: '+entidad+'</div>':'')+'<p>Festivos: nacionales + Andalucia + Cadiz capital | '+esES(HOY)+'</p></header>'+docTable+'<div class="meses">'+mH+'</div><div class="ley">'+lH+'</div><p class="pie">'+_org.map(d=>d.lbl+': '+esES(iso(d.ini))+' -> '+esES(iso(d.fin))+' ('+d.sess.length+' dias)').join(' | ')+'</p><div class="np" style="margin-top:10px"><button onclick="window.print()" style="padding:7px 16px;background:#1a3a5c;color:#fff;border:none;border-radius:5px;cursor:pointer">Imprimir / PDF</button></div></body></html>';
+ window.open(URL.createObjectURL(new Blob([html],{type:'text/html'})),'_blank');
+}
+function exportarExcel(){
+ if(!_org.length)return;if(typeof XLSX==='undefined'){alert('Necesitas internet para Excel.');return;}
+ const wb=XLSX.utils.book_new();
+ const entXls=getEntidadNombre();
+ _org.forEach(d=>{
+ const teo=d.p.docTeo||d.c.docTeo||'',tal=d.p.docPra||d.c.docTal||'',seg=d.p.docSeg||d.c.docPRL||'';
+ const docsRow=[];if(teo)docsRow.push(' Teoria: '+teo);if(tal)docsRow.push(' Taller: '+tal);if(seg)docsRow.push(' PRL: '+seg);
+ const entCurso=d.c.entidad||'';
+ const rows=[['ORGANIGRAMA - '+d.lbl],[d.c.codigo+' - '+d.c.nombre],['Turno: '+turnoLbl(d.turno)+' | '+esES(iso(d.ini))+' -> '+esES(iso(d.fin))+' | '+d.sess.length+' dias | '+d.c.horas_totales+'h'],['Entidad financiadora: '+(entCurso||entXls)],...(docsRow.length?[['Docentes: '+docsRow.join(' | ')]]:[]),[],['#','Fecha','Dia','H.Ses.','H.Acum.']];
+ const hTot=parseFloat(d.c.horas_totales),hD=parseFloat(d.p.hdia);let ac=0;
+ d.sess.forEach((s,i)=>{const ul=i===d.sess.length-1,r=hTot%hD,hs=(ul&&r!==0)?r:hD;ac+=hs;rows.push([i+1,esES(iso(s)),DN[s.getDay()],hs+'h',ac.toFixed(1)+'h']);});
+ const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:5},{wch:13},{wch:13},{wch:9},{wch:11}];
+ XLSX.utils.book_append_sheet(wb,ws,d.lbl.slice(0,28).replace(/[:\\/?*\[\]]/g,''));
+ });
+ const te=getTe();if(te.length){
+ const rows=[['CLASES TEORICAS'],['Fecha','Dia','Curso','Descripcion','Horas']];
+ te.sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(t=>rows.push([esES(t.fecha),DN[new Date(t.fecha).getDay()],t.curso||'General',t.desc,t.horas]));
+ const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:12},{wch:12},{wch:15},{wch:40},{wch:7}];
+ XLSX.utils.book_append_sheet(wb,ws,'Teoricas');
+ }
+ const pl=getPl();if(pl.length){
+ const rows=[['PRL'],['Fecha','Dia','Modulo','Horas','Curso','Notas']];
+ pl.sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(p=>rows.push([esES(p.fecha),DN[new Date(p.fecha).getDay()],p.modulo,p.horas,p.curso||'General',p.desc||'']));
+ const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:12},{wch:12},{wch:42},{wch:7},{wch:15},{wch:30}];
+ XLSX.utils.book_append_sheet(wb,ws,'PRL');
+ }
+ const cuAll=getCu();if(cuAll.length){const catRows=[['CATALOGO DE CURSOS'],['Codigo','Nombre','Area','H.Totales','H./Dia','Tipo','Entidad','Doc. Teoria','Doc. Taller','Doc. PRL']];cuAll.forEach(c=>catRows.push([c.codigo,c.nombre,c.area||'',c.horas_totales,c.horas_diarias,c.tipo,c.entidad||'',c.docTeo||'',c.docTal||'',c.docPRL||'']));const wsCat=XLSX.utils.aoa_to_sheet(catRows);wsCat['!cols']=[{wch:12},{wch:35},{wch:12},{wch:10},{wch:8},{wch:28},{wch:20},{wch:22},{wch:22},{wch:22}];XLSX.utils.book_append_sheet(wb,wsCat,'Catalogo');}
+ XLSX.writeFile(wb,'Organigrama_MEISA.xlsx');
+}
+function renderCursos(){
+ const tb=G('tbody-cursos');tb.innerHTML='';
+ getCu().forEach((c)=>{
+ const tr=document.createElement('tr');
+ tr.innerHTML='<td><span class="badge" style="background:var(--pri);color:#fff">'+c.codigo+'</span></td><td>'+c.nombre+'</td><td>'+(c.area||'—')+'</td><td style="text-align:center">'+c.horas_totales+'h</td><td style="text-align:center">'+c.horas_diarias+'h</td><td><span class="badge" style="background:'+(c.tipo.includes('Cert')?'#d5f5e3':'#d6eaf8')+'">'+(c.tipo.includes('Cert')?'CP':'PF')+'</span> '+c.tipo+'</td>'+'<td>'+(c.entidad?'<span class="badge" style="background:#d6eaf8;color:#1a5276">'+c.entidad+'</span>':'<span style="color:var(--mut)">—</span>')+'</td>'+'<td style="font-size:10px;line-height:1.6">'+(c.docTeo?' Teo: '+c.docTeo+'<br>':'')+(c.docTal?' Tal: '+c.docTal+'<br>':'')+(c.docPRL?' PRL: '+c.docPRL:'')+((!c.docTeo&&!c.docTal&&!c.docPRL)?'<span style="color:var(--mut)">—</span>':'')+'</td>';
+ tb.appendChild(tr);
+ });
+}
+function renderTeorica(){
+ const te=getTe();
+ const tb=G('tbody-teoricas');tb.innerHTML='';
+ te.forEach((x)=>{
+ const tr=document.createElement('tr');
+ tr.innerHTML='<td>'+esES(x.fecha)+'</td><td>'+DN[new Date(x.fecha).getDay()]+'</td><td>'+(x.curso||'General')+'</td><td>'+x.desc+'</td><td style="text-align:center">'+x.horas+'h</td>';
+ tb.appendChild(tr);
+ });
+ const tot=te.reduce((s,x)=>s+x.horas,0);
+ G('t-total').textContent=te.length+' clases | '+tot+' horas';
+}
+function renderCalTeorica(){
+ const te=getTe();const div=G('cal-teorica');
+ if(!te.length){div.innerHTML='<p style="color:var(--mut);padding:16px">Sin clases teoricas.</p>';return;}
+ const fechas=te.map(x=>new Date(x.fecha));
+ const ini=new Date(Math.min(...fechas)),fin=new Date(Math.max(...fechas));
+ const tSet={};te.forEach(x=>{if(!tSet[x.fecha])tSet[x.fecha]=[];tSet[x.fecha].push(x);});
+ div.innerHTML='';const cals=document.createElement('div');cals.className='calendarios';
+ let curM=new Date(ini.getFullYear(),ini.getMonth(),1);
+ const ulM=new Date(fin.getFullYear(),fin.getMonth(),1);
+ while(curM<=ulM){cals.appendChild(buildMes(curM.getFullYear(),curM.getMonth()+1,null,tSet,null));curM=new Date(curM.getFullYear(),curM.getMonth()+1,1);}
+ div.appendChild(cals);
+}
+function renderPRL(){
+ const pl=getPl(),tb=G('tbody-prl');tb.innerHTML='';
+ pl.forEach((x)=>{
+ const tr=document.createElement('tr');
+ tr.innerHTML='<td>'+esES(x.fecha)+'</td><td>'+DN[new Date(x.fecha).getDay()]+'</td><td>'+x.modulo+'</td><td style="text-align:center">'+x.horas+'h</td><td>'+(x.curso||'General')+'</td>';
+ tb.appendChild(tr);
+ });
+ const tot=pl.reduce((s,x)=>s+x.horas,0);
+ G('prl-stats').innerHTML=pl.length?'<strong>'+pl.length+'</strong> sesiones | <strong>'+tot+'h</strong> PRL<br><small>'+[...new Set(pl.map(x=>x.modulo))].map(m=>'- '+m).join('<br>')+'</small>':'Sin sesiones.';
+}
+function renderCalPRL(){
+ const pl=getPl();const div=G('cal-prl');
+ if(!pl.length){div.innerHTML='<p style="color:var(--mut);padding:16px">Sin sesiones PRL.</p>';return;}
+ const fechas=pl.map(x=>new Date(x.fecha));
+ const ini=new Date(Math.min(...fechas)),fin=new Date(Math.max(...fechas));
+ const pSet={};pl.forEach(x=>{if(!pSet[x.fecha])pSet[x.fecha]=[];pSet[x.fecha].push(x);});
+ div.innerHTML='';const cals=document.createElement('div');cals.className='calendarios';
+ let curM=new Date(ini.getFullYear(),ini.getMonth(),1);
+ const ulM=new Date(fin.getFullYear(),fin.getMonth(),1);
+ while(curM<=ulM){cals.appendChild(buildMes(curM.getFullYear(),curM.getMonth()+1,null,null,pSet));curM=new Date(curM.getFullYear(),curM.getMonth()+1,1);}
+ div.appendChild(cals);
+}
+function renderFestivos(){
+ const y=new Date().getFullYear(),f=getFest(y),ex=getEx(),exSet=new Set(Object.keys(ex));
+ const tb=G('tbody-fest');tb.innerHTML='';
+ Object.entries(f).sort(([a],[b])=>a.localeCompare(b)).forEach(([isoD,nom])=>{
+ const tr=document.createElement('tr');
+ tr.innerHTML='<td>'+esES(isoD)+'</td><td>'+nom+'</td><td>'+(exSet.has(isoD)?'Extra':'Automatico')+'</td>';
+ tb.appendChild(tr);
+ });
+}
+function renderGantt(){
+ const div=G('gantt-content');
+ const pr=getPr(),cu=getCu();if(!pr.length){div.innerHTML='<p style="color:var(--mut);padding:24px;text-align:center">Genera el organigrama en la version de edicion.</p>';return;}
+ _org=[];
+ pr.forEach(p=>{const c=cu[p.idx];if(!c)return;
+ const{ini,fin,sess}=calcOrg(new Date(p.inicio),parseFloat(c.horas_totales),parseFloat(p.hdia));
+ _org.push({p,c,ini,fin,sess,ss:new Set(sess.map(s=>iso(s))),bg:p.bg,fg:p.fg,lbl:p.label||c.codigo,turno:p.turno});
+ });
+ if(!_org.length){div.innerHTML='<p style="color:var(--mut);padding:24px;text-align:center">Genera el organigrama en la version de edicion.</p>';return;}
+ const te=getTe(),pl=getPl();
+ const allDates=[..._org.map(d=>new Date(d.ini)),..._org.map(d=>new Date(d.fin)),...te.map(t=>new Date(t.fecha)),...pl.map(p=>new Date(p.fecha))];
+ const iniG=new Date(Math.min(...allDates));
+ const finG=new Date(Math.max(...allDates));
+ const totalDays=Math.ceil((finG-iniG)/86400000)+1;
+ let mHead='';
+ let curM=new Date(iniG.getFullYear(),iniG.getMonth(),1);
+ const endM=new Date(finG.getFullYear(),finG.getMonth(),1);
+ while(curM<=endM){
+ const y=curM.getFullYear(),m=curM.getMonth();
+ const mStart=new Date(y,m,1),mEnd=new Date(y,m+1,0);
+ const sd=Math.max(0,Math.round((mStart-iniG)/86400000));
+ const ed=Math.min(totalDays-1,Math.round((mEnd-iniG)/86400000));
+ const w=((ed-sd+1)/totalDays*100).toFixed(2),l=(sd/totalDays*100).toFixed(2);
+ mHead+='<div style="position:absolute;left:'+l+'%;width:'+w+'%;text-align:center;font-size:10px;font-weight:bold;color:var(--pri);background:var(--blue);padding:4px 2px;border-right:1px solid #c8d8e8;overflow:hidden;white-space:nowrap;box-sizing:border-box">'+MESES[m+1]+' <span style="font-size:9px;font-weight:normal">'+y+'</span></div>';
+ curM=new Date(y,m+1,1);
+ }
+ let dHead='';
+ {
+ const mostrarNum=totalDays<=90;
+ let curD=new Date(iniG);
+ while(curD<=finG){
+ const sd=Math.round((curD-iniG)/86400000);
+ const l=(sd/totalDays*100).toFixed(3);
+ const w=(1/totalDays*100).toFixed(3);
+ const dNum=curD.getDate();
+ const dw=curD.getDay();
+ const isWeekend=(dw===0||dw===6);
+ const fest=getFest(curD.getFullYear())[iso(curD)];
+ const showNum=mostrarNum||(dNum===1||dNum===10||dNum===20);
+ const bg=fest?'#fde8e8':isWeekend?'#e8ecf2':'#f4f7fb';
+ const col=fest?'#922b21':isWeekend?'#999':'#555';
+ const bdr=dNum===1?'border-left:1px solid #aed6f1;':'border-right:1px solid #e4eaf2;';
+ dHead+='<div title="'+esES(iso(curD))+' - '+DN[dw]+( fest?' ('+fest+')':'')+'" style="position:absolute;left:'+l+'%;width:'+w+'%;'+bdr+'background:'+bg+';text-align:center;font-size:8px;color:'+col+';overflow:hidden;box-sizing:border-box;height:100%;display:flex;align-items:center;justify-content:center;font-weight:'+(dNum===1?'bold':'normal')+'">'+(showNum?String(dNum):'')+'</div>';
+ curD=addD(curD,1);
+ }
+ }
+ let semGuia='';
+ let curS=new Date(iniG);while(curS.getDay()!==1)curS=addD(curS,1);
+ while(curS<=finG){const sd=Math.round((curS-iniG)/86400000);const l=(sd/totalDays*100).toFixed(2);semGuia+='<div style="position:absolute;left:'+l+'%;top:0;bottom:0;border-left:1px dashed #e0e8f0;pointer-events:none;z-index:0"></div>';curS=addD(curS,7);}
+ function mkMark(fecha,color,tip){
+ const msd=Math.round((new Date(fecha)-iniG)/86400000);
+ const ml=(msd/totalDays*100).toFixed(3);
+ return '<div title="'+tip+'" style="position:absolute;left:calc('+ml+'% - 2px);top:4px;bottom:4px;width:4px;background:'+color+';border-radius:2px;z-index:3;cursor:default;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div>';
+ }
+ let rows=_org.map(d=>{
+ const sd=Math.round((new Date(d.ini)-iniG)/86400000);
+ const ed=Math.round((new Date(d.fin)-iniG)/86400000);
+ const l=(sd/totalDays*100).toFixed(2),w=((ed-sd+1)/totalDays*100).toFixed(2);
+ const dTeo=te.filter(t=>t.curso===d.c.codigo);
+ const tMarkers=dTeo.map(t=>mkMark(t.fecha,'#c9a700','TEORICA - '+d.lbl+'\n'+esES(t.fecha)+'\n'+t.horas+'h\n'+t.desc)).join('');
+ const dPrl=pl.filter(p=>p.curso===d.c.codigo);
+ const pMarkers=dPrl.map(p=>mkMark(p.fecha,'#e67e22','PRL - '+d.lbl+'\n'+esES(p.fecha)+'\n'+p.horas+'h\n'+p.modulo)).join('');
+ const infoExtra=(dTeo.length?'<span style="font-size:9px;color:#7d6608;margin-right:5px">'+dTeo.length+' teoricas</span>':'')+(dPrl.length?'<span style="font-size:9px;color:#784212">'+dPrl.length+' PRL</span>':'');
+ return '<div style="display:flex;align-items:stretch;border-bottom:1px solid #e8eef4;min-height:46px">'+
+ '<div style="width:200px;min-width:200px;padding:6px 10px;font-size:11px;line-height:1.5;background:#f4f7fb;border-right:3px solid '+d.bg+'">'+
+ '<div style="font-weight:bold;color:var(--pri);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+d.c.nombre+'">'+d.lbl+'</div>'+
+ '<div style="color:var(--mut);font-size:10px">'+turnoLbl(d.turno)+' - '+d.sess.length+'d - '+d.c.horas_totales+'h</div>'+
+ (d.c.entidad?'<div style="margin-top:2px"><span class="badge" style="background:#d6eaf8;color:#1a5276;font-size:9px">'+d.c.entidad+'</span></div>':'')+
+ (infoExtra?'<div>'+infoExtra+'</div>':'')+
+ '</div>'+
+ '<div style="flex:1;position:relative;background:#fafcff;overflow:hidden">'+
+ semGuia+tMarkers+pMarkers+
+ '<div style="position:absolute;left:'+l+'%;width:'+w+'%;top:22%;height:56%;background:'+d.bg+';border-radius:4px;display:flex;align-items:center;padding:0 8px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.18);cursor:default;z-index:1">'+
+ '<span style="font-size:9px;font-weight:bold;color:'+d.fg+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esES(iso(d.ini))+' -> '+esES(iso(d.fin))+'</span>'+
+ '</div>'+
+ '</div>'+
+ '</div>';
+ }).join('');
+ const pie='<div style="display:flex;justify-content:space-between;padding:6px 0 0 200px;font-size:10px;color:var(--mut)"><span>'+esES(iso(iniG))+'</span><span>'+esES(iso(finG))+'</span></div>';
+ div.innerHTML=
+ '<div style="display:flex;align-items:stretch;border-bottom:2px solid var(--pri)">'+
+ '<div style="width:200px;min-width:200px;background:var(--pri);padding:7px 10px;font-size:11px;font-weight:bold;color:#fff;display:flex;align-items:center">Curso / Turno</div>'+
+ '<div style="flex:1;display:flex;flex-direction:column;">'+
+ '<div style="position:relative;height:24px;border-bottom:1px solid #c8d8e8;">'+mHead+'</div>'+
+ '<div style="position:relative;height:20px;">'+dHead+'</div>'+
+ '</div>'+
+ '</div>'+
+ rows+pie+
+ '<div style="display:flex;flex-wrap:wrap;gap:10px;font-size:11px;padding:12px 0 4px;border-top:1px solid #e8eef4;margin-top:8px;align-items:center">'+
+ '<strong style="color:var(--pri)">Leyenda:</strong> '+
+ _org.map(d=>'<span style="display:flex;align-items:center;gap:4px"><span style="width:13px;height:13px;border-radius:3px;background:'+d.bg+';display:inline-block;border:1px solid rgba(0,0,0,.15)"></span>'+d.lbl+'</span>').join('')+
+ '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:5px;height:14px;background:#c9a700;border-radius:2px"></span>Clase teorica</span>'+
+ '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:5px;height:14px;background:#e67e22;border-radius:2px"></span>Sesion PRL</span>'+
+ '</div>';
+}
+const ESPEC_LABELS={soldadura:'Soldadura',tuberia:'Tuberias',mecanica:'Mecanica',electricidad:'Electricidad',electronica:'Electronica',teoria:'Teoria General',prl:'PRL / Seguridad',general:'General'};
+function renderDocentes(){
+ const dc=getDc(),cu=getCu(),pr=getPr();
+ const stats=G('doc-stats');
+ const espStats={};
+ dc.forEach(d=>{const e=d.espec||'general';espStats[e]=(espStats[e]||0)+1;});
+ stats.innerHTML=dc.length
+ ?'<strong>'+dc.length+'</strong> docentes registrados<br>'+Object.entries(espStats).map(([k,c])=>ESPEC_LABELS[k]+': <strong>'+c+'</strong>').join('<br>')
+ :'<em>Sin docentes registrados.</em>';
+ renderAsignaciones();
+}
+function renderAsignaciones(){
+ const dc=getDc(),cu=getCu(),pr=getPr();
+ const div=G('doc-asignaciones');
+ if(!dc.length){div.innerHTML='<p style="color:var(--mut)">Registra docentes para ver sus asignaciones.</p>';return;}
+ div.innerHTML=dc.map(d=>{
+ const prTeo=pr.filter(p=>{const c=cu[p.idx];return c&&c.docTeo&&c.docTeo.toLowerCase().includes(d.nombre.toLowerCase());});
+ const prTal=pr.filter(p=>{const c=cu[p.idx];return c&&c.docTal&&c.docTal.toLowerCase().includes(d.nombre.toLowerCase());});
+ const prPRL=pr.filter(p=>{const c=cu[p.idx];return c&&c.docPRL&&c.docPRL.toLowerCase().includes(d.nombre.toLowerCase());});
+ const total=prTeo.length+prTal.length+prPRL.length;
+ if(!total)return'<div style="padding:6px 0;border-bottom:1px solid #eaeff5"><strong>'+d.nombre+'</strong> - <span style="color:var(--mut)">Sin asignaciones activas</span></div>';
+ return'<div style="padding:6px 0;border-bottom:1px solid #eaeff5"><strong>'+d.nombre+'</strong> <span class="badge" style="background:var(--pri);color:#fff;font-size:9px">'+ESPEC_LABELS[d.espec]+'</span><br>'
+ +(prTeo.length?'<span style="font-size:10px;color:#1a5276">Teoria: '+prTeo.map(p=>cu[p.idx]?.codigo||'?').join(', ')+'</span><br>':'')
+ +(prTal.length?'<span style="font-size:10px;color:#784212">Taller: '+prTal.map(p=>cu[p.idx]?.codigo||'?').join(', ')+'</span><br>':'')
+ +(prPRL.length?'<span style="font-size:10px;color:#922b21">PRL: '+prPRL.map(p=>cu[p.idx]?.codigo||'?').join(', ')+'</span>':'')
+ +'</div>';
+ }).join('');
+}
+function getEntidadNombre(){
+ const en=getEn();return en.tipo==='otro'?(en.otro||'Sin especificar'):(en.tipo||'Sin especificar');
+}
+function init(){
+ const ent=getEntidadNombre();
+ G('ent-display').textContent=ent!=='Sin especificar'?'Entidad: '+ent:'Sin entidad especificaca';
+ renderListaProg();
+ renderCursos();
+ renderFestivos();
+ renderDocentes();
+ generarOrganigrama();
+}
+init();
+</script>
+</body>
+</html>

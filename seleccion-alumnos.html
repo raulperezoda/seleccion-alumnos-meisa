@@ -7,18 +7,15 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-  </style>
+  <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
 <body class="bg-gray-50 min-h-screen">
   <div id="app" class="max-w-7xl mx-auto p-4"></div>
-
 <script>
 const NOMBRES_FEMENINOS = new Set([
   'maria','rosa','isabel','carmen','julia','ana','laura','silvia','sara',
   'elena','marta','paula','natalia','clara','irene','alicia','beatriz','lucia',
-  'sofia','cristina','patricia','veronica','monica','ev','andrea','raquel','susana',
+  'sofia','cristina','patricia','veronica','monica','eva','andrea','raquel','susana',
   'nuria','noelia','miriam','lorena','alba','ines','aitana','esther','vanessa',
   'gloria','angela','marian','montse','montserrat','mercedes','margarita','rosario',
   'luisa','pilar','teresa','marisol','aurora','lolita','lola','magdalena','amanda',
@@ -46,7 +43,7 @@ const NOMBRES_FEMENINOS = new Set([
   'jade','jamie','jane','janet','janice','jasmine','jean','jeanne','jennifer','jessie',
   'jill','jillian','joanna','joanne','jocelyn','jodi','jodie','jody','joyce','judith','julie',
   'karen','kari','karin','karina','karla','kate','katharine','katherine','kathie','kathleen',
-  'kathryn','kathy','kati','katie','kati','kay','kayla','kaylee','kelly','kelsey','kendall',
+  'kathryn','kathy','kati','katie','kay','kayla','kaylee','kelly','kelsey','kendall',
   'keri','kerri','kerry','kim','kimberley','kimberly','kira','kirsten','kristen','kristin',
   'kristina','kristine','kristy','kylie','lacey','laila','lana','lara','latoya','laurie',
   'leah','leigh','leila','lesley','leslie','lilian','linda','lindsay','lindy','liz','liza',
@@ -100,43 +97,24 @@ let state = {
 const porPagina = 50;
 
 function detectarFilaCabeceras(json) {
-  // Las cabeceras siempre están en fila 2 (índice 1)
-  // Buscar la fila que tenga "NOMBRE" en la columna 2
-  for (let i = 0; i < Math.min(5, json.length); i++) {
+  for (let i = 0; i < Math.min(10, json.length); i++) {
     const row = json[i];
     if (!row) continue;
-    // La columna NOMBRE está en índice 1
-    const nombreCelda = String(row[1] || '').toLowerCase().trim();
-    if (nombreCelda === 'nombre') {
-      console.log('Cabeceras encontradas en fila:', i);
-      return i;
+    for (let j = 0; j < row.length; j++) {
+      const celda = String(row[j] || '').toLowerCase().trim();
+      if (celda === 'nombre') return i;
     }
   }
-  // Por defecto usar fila 1 (índice 1)
-  return 1;
-}
-
-function tieneCurso(row, tipo) {
-  if (!Array.isArray(row)) return false;
-  // Columns 10, 11, 12 in the array = columns 11, 12, 13 in Excel
-  for (let col = 10; col <= 12; col++) {
-    const val = String(row[col] || '').toLowerCase().trim();
-    if (tipo === 'soldador' && val.includes('soldador')) return true;
-    if (tipo === 'tubero' && (val.includes('tubero') || val.includes('tuberia'))) return true;
-    if (tipo === 'montador' && val.includes('montador')) return true;
-  }
-  return false;
+  return 2;
 }
 
 function getModalidades(row) {
   if (!Array.isArray(row)) return [];
+  const obs = String(row[4] || '').toLowerCase();
   const mods = [];
-  for (let col = 10; col <= 12; col++) {
-    const val = String(row[col] || '').toLowerCase().trim();
-    if (val.includes('soldador') && !mods.includes('soldador')) mods.push('soldador');
-    if ((val.includes('tubero') || val.includes('tuberia')) && !mods.includes('tubero')) mods.push('tubero');
-    if (val.includes('montador') && !mods.includes('montador')) mods.push('montador');
-  }
+  if (obs.includes('soldador') || obs.includes('soldadura')) mods.push('soldador');
+  if (obs.includes('tubero') || obs.includes('tuberia')) mods.push('tubero');
+  if (obs.includes('montador')) mods.push('montador');
   return mods;
 }
 
@@ -148,66 +126,58 @@ function leerExcel(e) {
     try {
       const data = new Uint8Array(event.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      
+      let mejorHoja = 0;
+      let maxDatos = 0;
+      
+      for (let h = 0; h < workbook.SheetNames.length; h++) {
+        const sheet = workbook.Sheets[workbook.SheetNames[h]];
+        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        let filasConDatos = 0;
+        for (let i = 1; i < json.length; i++) {
+          if (json[i] && json[i].length > 0 && json[i][2]) filasConDatos++;
+        }
+        if (filasConDatos > maxDatos) {
+          maxDatos = filasConDatos;
+          mejorHoja = h;
+        }
+      }
+      
+      const sheet = workbook.Sheets[workbook.SheetNames[mejorHoja]];
       const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
       
       if (json.length < 2) {
-        alert('Archivo vacio');
+        alert('Archivo vacío');
         return;
       }
       
-      // La fila de cabeceras es la que tiene más columnas
       const filaCabeceras = detectarFilaCabeceras(json);
-      const headers = json[filaCabeceras].map(String);
-      
-      // Mapeo de columnas según el Excel:
-      // Col 1 (idx 0): numero
-      // Col 2 (idx 1): NOMBRE
-      // Col 10 (idx 9): EDAD
-      // Col 11 (idx 10): CURSO 1
-      // Col 12 (idx 11): CURSO 2
-      // Col 13 (idx 12): CURSO 3
-      // Col 14 (idx 13): ESTUDIOS
       
       const nuevosAlumnos = [];
       let saltados = 0;
       
       for (let i = filaCabeceras + 1; i < json.length; i++) {
         const row = json[i];
+        if (!row || row.length === 0) { saltados++; continue; }
         
-        // Debug: mostrar cada fila
-        if (!row || row.length === 0) {
-          saltados++;
-          continue;
-        }
+        const nombre = String(row[2] || '').trim();
+        if (!nombre) { saltados++; continue; }
         
-        // El nombre está en índice 1
-        const nombre = String(row[1] || '').trim();
-        if (!nombre) {
-          saltados++;
-          console.log('Fila', i, 'sin nombre');
-          continue;
-        }
-        
-        // La edad está en índice 9
         let edad;
-        const edadVal = parseInt(row[9]);
+        const edadVal = parseInt(row[10]);
         if (!isNaN(edadVal)) edad = edadVal;
         
-        // Los estudios están en índice 13
-        const estudios = String(row[13] || '').trim();
-        
-        // Obtener todas las modalidades del alumno
+        const observaciones = String(row[4] || '').trim();
         const modalidades = getModalidades(row);
         
         nuevosAlumnos.push({
           id: 'alum-' + i,
           nombre,
           edad,
-          estudios,
-          experiencia: '',
-          modalidades: modalidades,  // Array de modalidades
-          modalidad: modalidades[0] || '',  // Primera modalidad
+          estudios: observaciones,
+          experiencias: '',
+          modalidades: modalidades,
+          modalidad: modalidades[0] || '',
           curso: modalidades.join(', '),
           seleccionado: false,
           esReserva: false,
@@ -215,22 +185,16 @@ function leerExcel(e) {
         });
       }
       
-      console.log('Total filas en JSON:', json.length);
-      console.log('Fila cabeceras:', filaCabeceras);
-      console.log('Filas a procesar:', json.length - filaCabeceras - 1);
-      console.log('Filas saltadas (vacias/sin nombre):', saltados);
-      
       state.alumnos = nuevosAlumnos;
       state.seleccionados = [];
       state.reservas = [];
       state.paginaActual = 1;
       
-      // Contar por modalidad usando el array de modalidades
       const soldador = nuevosAlumnos.filter(a => a.modalidades && a.modalidades.includes('soldador')).length;
       const tubero = nuevosAlumnos.filter(a => a.modalidades && a.modalidades.includes('tubero')).length;
       const montador = nuevosAlumnos.filter(a => a.modalidades && a.modalidades.includes('montador')).length;
       
-      alert('Excel cargado: ' + nuevosAlumnos.length + ' alumnos\n\nCon montador: ' + montador + '\nCon tubero: ' + tubero + '\nCon soldador: ' + soldador + '\n\nFilas procesadas: ' + (json.length - filaCabeceras - 1) + '\nSaltadas: ' + saltados);
+      alert('Hoja seleccionada: ' + workbook.SheetNames[mejorHoja] + '\n\nTotal: ' + nuevosAlumnos.length + ' alumnos\nMontador: ' + montador + '\nTubero: ' + tubero + '\nSoldador: ' + soldador);
       render();
     } catch (err) {
       console.error('Error:', err);
@@ -251,7 +215,6 @@ function getAlumnosFiltrados() {
     );
   }
   
-  // Filtrar por modalidad
   if (state.modalidadSeleccionada !== 'todos') {
     const filtro = state.modalidadSeleccionada;
     result = result.filter(a => a.modalidades && a.modalidades.includes(filtro));
@@ -262,7 +225,6 @@ function getAlumnosFiltrados() {
 
 function seleccionarAleatorio() {
   const disponibles = getAlumnosFiltrados().filter(a => !a.seleccionado && !a.esEvitable);
-  console.log('Disponibles:', disponibles.length, 'Principales:', state.numPrincipales, 'Reservas:', state.numReservas);
   
   if (disponibles.length === 0) {
     alert('No hay candidatos disponibles');
@@ -270,37 +232,11 @@ function seleccionarAleatorio() {
   }
   
   const shuffled = [...disponibles].sort(() => Math.random() - 0.5);
-  
-  // Garantizar al menos una mujer si hay
-  const mujeres = disponibles.filter(a => esNombreFemenino(a.nombre));
-  console.log('Mujeres disponibles:', mujeres.length);
-  const principales = [];
-  
-  if (mujeres.length > 0 && state.numPrincipales > 1) {
-    const mujerElegida = mujeres[Math.floor(Math.random() * mujeres.length)];
-    principales.push({ ...mujerElegida, seleccionado: true });
-    console.log('Mujer seleccionada:', mujerElegida.nombre);
-    const restantes = disponibles.filter(a => a.id !== mujerElegida.id);
-    const resto = [...restantes].sort(() => Math.random() - 0.5);
-    console.log('Restantes:', restantes.length, 'Selecting:', state.numPrincipales - 1);
-    for (let i = 0; i < state.numPrincipales - 1 && i < resto.length; i++) {
-      principales.push({ ...resto[i], seleccionado: true });
-    }
-  } else {
-    console.log('Selecting normally:', state.numPrincipales);
-    for (let i = 0; i < state.numPrincipales && i < shuffled.length; i++) {
-      principales.push({ ...shuffled[i], seleccionado: true });
-    }
-  }
-  
-  console.log('Principales seleccionados:', principales.length);
+  const principales = shuffled.slice(0, state.numPrincipales).map(a => ({ ...a, selecionado: true }));
   
   const noSeleccionados = disponibles.filter(a => !principales.find(p => p.id === a.id));
   const shuffledReservas = [...noSeleccionados].sort(() => Math.random() - 0.5);
-  const reservasArr = [];
-  for (let i = 0; i < state.numReservas && i < shuffledReservas.length; i++) {
-    reservasArr.push({ ...shuffledReservas[i], esReserva: true });
-  }
+  const reservasArr = shuffledReservas.slice(0, state.numReservas).map(a => ({ ...a, esReserva: true }));
   
   state.seleccionados = principales;
   state.reservas = reservasArr;
@@ -311,10 +247,12 @@ function seleccionarAleatorio() {
     if (isReserva) return { ...a, seleccionado: false, esReserva: true };
     return { ...a, seleccionado: false, esReserva: false };
   });
+  
+  console.log('Seleccionados:', principales.length, 'Reservas:', reservasArr.length);
   render();
 }
 
-function ascendeReserva(reserva) {
+function ascenderReserva(reserva) {
   const nuevosSeleccionados = [...state.seleccionados];
   const ultimo = nuevosSeleccionados.pop();
   if (ultimo) {
@@ -327,10 +265,7 @@ function ascendeReserva(reserva) {
 }
 
 function toggleEvitable(alumnoId) {
-  state.alumnos = state.alumnos.map(a => {
-    if (a.id === alumnoid) return { ...a, esEvitable: !a.esEvitable };
-    return a;
-  });
+  state.alumnos = state.alumnos.map(a => a.id === alumnoid ? { ...a, esEvitable: !a.esEvitable } : a);
   render();
 }
 
@@ -382,10 +317,10 @@ function copiarNombres() {
 function exportarCSV() {
   let csv = 'Tipo,N°,Nombre,Edad,Estudios,Modalidad,Curso\n';
   state.seleccionados.forEach((a, i) => {
-    csv += `Alumno,${i + 1},"${a.nombre}",${a.edad || ''},"${a.estudios || ''}","${a.modalidad || ''}","${a.curso || ''}"\n`;
+    csv += `Alumno,${i + 1},"${a.nombre}",${a.edad || ''},"${a.estudios || ''}","${a.modalidades ? a.modalidades.join(', ') : ''}","${a.curso || ''}"\n`;
   });
   state.reservas.forEach((a, i) => {
-    csv += `Reserva,${i + 1},"${a.nombre}",${a.edad || ''},"${a.estudios || ''}","${a.modalidad || ''}","${a.curso || ''}"\n`;
+    csv += `Reserva,${i + 1},"${a.nombre}",${a.edad || ''},"${a.estudios || ''}","${a.modalidades ? a.modalidades.join(', ') : ''}","${a.curso || ''}"\n`;
   });
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
@@ -420,7 +355,7 @@ function renderTarjeta(alumno, esReserva, esBaseDatos) {
       <div class="text-xs space-y-1">
         ${alumno.edad !== undefined ? `<span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-xs">${alumno.edad} años</span>` : ''}
         ${esNombreFemenino(alumno.nombre) ? '<span class="text-purple-600 font-medium">M</span>' : ''}
-        ${alumno.modalidad ? `<span class="bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded text-xs">${alumno.modalidad}</span>` : ''}
+        ${alumno.modalidades && alumno.modalidades.length > 0 ? `<span class="bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded text-xs">${alumno.modalidades.join(', ')}</span>` : ''}
         <input type="text" value="${(alumno.estudios || '').replace(/"/g, '&quot;')}" 
           onchange="actualizarCampo('${alumno.id}', 'estudios', this.value)"
           placeholder="Estudios..." 
@@ -445,16 +380,14 @@ function renderTarjeta(alumno, esReserva, esBaseDatos) {
 
 function render() {
   const colorModalidad = MODALIDADES_COLORES[state.modalidadSeleccionada] || MODALIDADES_COLORES['todos'];
-  const tieneMujeres = getAlumnosFiltrados().some(a => esNombreFemenino(a.nombre));
-  const mujeresEnSeleccion = state.seleccionados.filter(a => esNombreFemenino(a.nombre)).length;
   const filtrados = getAlumnosFiltrados();
   
   let app = `
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-2xl font-bold" style="color: ${colorModalidad}">Seleccion de Alumnos</h1>
       <div class="flex gap-2">
-        <button onclick="state.pestana='seleccion'; render()" class="px-4 py-2 rounded-lg flex items-center gap-2 ${state.pestana === 'seleccion' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border'}">Seleccion</button>
-        <button onclick="state.pestana='basedatos'; render()" class="px-4 py-2 rounded-lg flex items-center gap-2 ${state.pestana === 'basedatos' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border'}">Base de Datos</button>
+        <button onclick="state.pestana='seleccion'; render()" class="px-4 py-2 rounded-lg ${state.pestana === 'seleccion' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border'}">Seleccion</button>
+        <button onclick="state.pestana='basedatos'; render()" class="px-4 py-2 rounded-lg ${state.pestana === 'basedatos' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border'}">Base de Datos</button>
       </div>
     </div>
   `;
@@ -491,7 +424,6 @@ function render() {
             <div class="flex-1">
               <div class="text-sm text-gray-600">
                 <span class="font-medium">${filtrados.length}</span> candidatos disponibles
-                ${tieneMujeres ? `<span class="ml-2 text-purple-600">• ${filtrados.filter(a => esNombreFemenino(a.nombre)).length} mujeres</span>` : ''}
               </div>
             </div>
             <button onclick="seleccionarAleatorio()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
@@ -526,7 +458,7 @@ function render() {
                 ${state.reservas.map((alumno, idx) => `
                   <div class="relative">
                     <span class="absolute -top-2 -left-2 bg-gray-400 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">${idx + 1}</span>
-                    <button onclick="ascendeReserva('${alumno.id}')" class="absolute top-2 right-2 p-1 bg-green-100 text-green-600 rounded">↑</button>
+                    <button onclick="ascenderReserva('${alumno.id}')" class="absolute top-2 right-2 p-1 bg-green-100 text-green-600 rounded">↑</button>
                     ${renderTarjeta(alumno, true, false)}
                   </div>
                 `).join('')}
